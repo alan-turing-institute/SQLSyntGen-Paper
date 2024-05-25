@@ -2,7 +2,7 @@
 
 % this is the template for an issue of the Data Engineering Bulletin
 % % all packages used by any paper must be listed here
-\usepackage{deauthor,times,graphicx, url, enumitem}
+\usepackage{deauthor,times,graphicx, url, enumitem,listings,minted}
 \graphicspath{{figures/}}
 
 \begin{document}
@@ -55,7 +55,7 @@ By pooling resources and data between hospitals, research can proceed at a faste
 
 \subsection{Mechanisms for Data Sharing}
 
-Hospitals enables external collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing mechanisms. These are designed to protect patient privacy while facilitating necessary research and collaboration. 
+Hospitals enables external collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing mechanisms. The aim of these mechanisms are to protect patient privacy while facilitating research and collaboration. 
 
 \subsubsection{Honorary contracts for visiting researchers}
 
@@ -82,7 +82,7 @@ This means that working with data within TREs is far from a comfortable experien
 
 \subsubsection{Synthetic Data Generators}
 
-Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. There is a balance to be struck here in regards to the application of generators; synthetic data which is very similar to the real dataset (high fidelity) risk leaking information about real patients (low privacy). However, the utility of low-fidelity datasets is limited; analysis conclusions are less likely to be applicable to real data.
+Synthetic data generators generate datasets which mirror statistical properties of real data. There is a balance to be struck here in regards to the application of generators; synthetic data which is very similar to the real dataset (high fidelity) risk leaking information about real patients (low privacy). However, the utility of low-fidelity datasets is limited; analysis conclusions are less likely to be applicable to real data.
 
 \begin{figure}[ht]
 \centering
@@ -91,11 +91,19 @@ Synthetic data generators can generate synthetic datasets which mirror statistic
 \label{fig:Range of fidelity for synthetic data}
 \end{figure}
 
-Figure 1 shows the range of fidelity for synthetic data. In the context of medical data structurally correct datasets are datasets which has the same column names, tables and relationships as real data. Valid datasets imply that the values in the synthetic dataset is valid eg. a patient's date of death is not before their date of birth. Plausible datasets imply that the narrative structure of the data is intact eg. a patient with diabetes has more blood sugar recordings than a patient with a broken bone. Multivariate plausible implies that the values are correlated across different variables eg. a male patient like likely to be both heavier and taller than a female patient. A multivariate detailed dataset is even more realistic than a multivariate plausible data set, but less than a replica of the real data. 
+Figure 1 shows the range of fidelity for synthetic data. In the context of healthcare relational datasets: 
+
+\begin{itemize}
+    \item \textbf{Structurally correct datasets} has the same column names, tables and relationships as real data. 
+    \item \textbf{Valid datasets} imply that the values in the synthetic dataset are correct and correct eg. date of births are valid dates. 
+    \item \textbf{Plausible datasets} imply that the relationship between values are realistic eg. a patient's date of death is not before their date of birth.
+    \item \textbf{Multivariate plausible datasets} implies that the values are correlated across different variables eg. a male patient like likely to be both heavier and taller than a female patient. 
+    \item \textbf{Multivariate detailed datasets} are even realistic than a multivariate plausible data set, but less than a replica of the real data. An example is rows of data showing that patient with a diabetes diagnosis has more records of blood sugar readings than a patient with a broken bone.
+\end{itemize}
 
 High fidelity data is likely to be more useful (analytic valuable), but also has an increased risk of identification (disclosure risk). The three factors: a) fidelity, b) utility and c) privacy are all factors to be decided according to different use cases. 
 
-For example, data for software testing may necessarily be low fidelity if they will be released to external contractors but it could still be useful by being only structurally correct.  Multivariate-plausible data could be sufficient for initial exploration, building pipe-lining and test modules for models, these tasks can be performed in a secure environment whose access is limited to students and researchers; these scripts ported into the hospital to be trained on real data if initial analysis is shown to be promising.
+For example, synthetic datasets for the purpose of software testing is necessarily low fidelity if access cannot be strictly controlled but it could still be useful by being only structurally correct.  Multivariate-plausible data could be sufficient for initial exploration, building pipe-lining and test modules for models. These tasks can be performed in a secure environment whose access is limited to students and researchers; these scripts ported into the hospital to be trained on real data if initial analysis is shown to be promising.
 
 \textit{NOTE: Carsten, can I have some help here please? Some words about state of the art generators and their applications and limitations would be really useful}
 
@@ -155,17 +163,19 @@ However, what engineers and researchers working on early stages of exploratory a
 % Discuss any innovative features or approaches used in the software's design and development.
 \section{Synthetic Data Generator for Relational Databases}
 
-\subsection{Introduction}
+\subsection{SqlSynthGen: Introduction}
 
 % So far, I observe that most of our work has been in the area of generating synthetic data. Our collaborators are now interested in evaluating the risks of releasing the synthetic data, by some form of privacy measurement. As a response, Turing is building a privacy evaluation toolbox which implements a number of attacks against generators. 
 
-% Notes: effectiveness of different anonymization techniques highly depends on context, which includes the dimensionality, volume, and statistical properties of data. Other important aspects that need to be considered include which types of applications or analyses the data are to be used for,whether the data will be released publicly or with additional access control and whether the data are tabular or have longitudinal or transactional characteristics.
+SqlSynthGen (SSG) is a software package that we have written to meet the challenges described in Section 3.3. When linked to an existing relational database, SSG creates new empty database with the same schema, copies over the non-sensitive data such as vocabulary tables and finally populates it with synthetic data. 
 
-SqlSynthGen (SSG) is a software package that we have written to meet the challenges described above. When pointed to an existing relational database, SSG creates another database with the same schema, copies over the non-sensitive data such as vocabulary tables and finally populates it with synthetic data. The default behaviour of SSG is to create only structurally correct data, which is on the far left end of the spectrum in Figure 1. 
+SSG's default output dataset is structurally correct and has no disclosure risk. These are datasets that sit on the far left end of the spectrum in Figure 1. No information about the real dataset has been disclosed, beyond the structure in which they are stored. However, this can already be useful e.g. for building software testing modules and pipe-lining scripts, and can be safely released if vocabularies and schema can be shared.
 
-SSG's default output is structurally correct and has no disclosure risk. No information about the sensitive information has been disclosed, beyond the structure in which they are stored. However, this can already be useful for e.g. software testing needs, and can be safely released if vocabularies and schema can be shared.
+However SSG can be configured to generates synthetic data which, on the Figure 1 spectrum is up to multivariate plausible. This is achieved by SSG enabling the user to define SQL statements to extract statistical properties of the real data. These values are then used to form the distributions and marginals of the synthetic data. 
 
-SSG also generates synthetic data which is up to multivariate plausible. SSG enables the user to define SQL statements to extract statistical properties of the real data. These values are then used to form the distributions and marginals of the synthetic data. This allows customisation of the data generation to move towards the right in a selective manner, where the user specifies exactly which marginals are extracted from the source data, and how they are used to inform the synthetic data. This allows for agile development with incremental fidelity improvements as needed, with transparency, auditability, and control over privacy risk at all stages. The user can also choose to use differential privacy to protect the marginals extracted from the source data.
+SSG configuration allows dataset output to be shifted towards the right in a selective manner. The user specifies exactly which marginals are extracted from the source data, and how they are used to inform the synthetic data. SSG configuration allows for agile development with incremental fidelity improvements only as specified, with transparency, auditability, and control over privacy risk at all stages. The user can also choose to use differential privacy to protect the marginals extracted from the source data.
+
+\subsection{SqlSynthGen: Process for Generating Synthetic Data}
 
 \begin{figure}[ht]
 \centering
@@ -174,13 +184,85 @@ SSG also generates synthetic data which is up to multivariate plausible. SSG ena
 \label{fig:Range of fidelity for synthetic data}
 \end{figure}
 
-SSG as described in Figure 2, works as follows:
+SSG's steps for generating synthetic relational datasets as shown in Figure 2, are as follows:
 
 \begin{enumerate}
-    \item SSG discovers the schema of the real and creates a new database as destination for synthetic data generated in Step 3.
-    \item It copies over some tables entirely. This is for lookup tables without any privacy concerns.
-    \item By default, SSG populates the destination database with only structurally correct data. Alternatively, SSG extracts statistics from the source database to parameterise custom generators to make higher fidelity synthetic data. For example, we could extract mean height by age and gender and define some custom data generators to create a relationship between them. The user decides what is extracted and writes the custom generators as Python functions.
+    \item SSG discovers the schema of the real and creates a new database to store synthetic data. This new database will be populated in Step 3 below. 
+    \item SSG copies over some tables entirely. This step is to maintain foreign key constraints, and is used to support lookup tables which do not have any privacy concerns.
+    \item By default, SSG populates the destination database with only structurally correct data. \item Alternatively, SSG extracts statistics from the source database to parameterise custom generators to make higher fidelity synthetic data. For example, we could extract mean height by age and gender and define some custom data generators to create a relationship between them. The user decides what is extracted and writes the custom generators as Python functions.
 \end{enumerate}
+
+\subsection{SqlSynthGen: Example with AirBnB relational dataset}
+
+Let us consider that the AirBnb data is contained in the airbnb database in a local PostgreSQL instance, and we want to port it to the `dst` database. 
+
+\subsubsection{Replicate structure of real dataset}
+
+First, we need to provide SSG with the connection parameters to the real dataset, using a .env file like the following:
+
+\begin{minted}[
+    gobble=4,
+    frame=single,
+    linenos
+  ]{yaml}
+    SRC_HOST_NAME=localhost 
+    SRC_USER_NAME=postgres 
+    SRC_USER_NAME=postgres 
+    SRC_PASSWORD=password
+    SRC_DB_NAME=airbnb 
+    DST_HOST_NAME=localhost 
+    DST_USER_NAME=postgres 
+    DST_PASSWORD=password 
+    DST_DB_NAME=dst
+\end{minted}
+
+We can start the schema migration process by running \mintinline{bash}{sqlsynthgen make-tables} on the command line. When executed successfully, this command makes Python file \mintinline{bash}{orm.py} which contains the schema of the `airbnb` database. We use this file to replicate the schema in `dst`, by running \mintinline{bash}{sqlsynthgen create-tables}. 
+
+\subsubsection{Replicate structure of real dataset}
+
+This creates an ssg.py file that contains one generator class (not to be confused with Python generator functions) per source database table. By default, without any user configuration, the data produced by these generators fulfills the schema of the original data: the data types are correct and the foreign key and uniqueness constraints are respected.
+
+We also use the `orm.py` file to make a Python module that generates default synthetic data:
+
+```bash=
+$ sqlsynthgen make-generators
+```
+
+This file will contain one generator class (not to be confused with Python generator functions) per source database table.
+
+By default, SSG presumes that any primary keys it encounters will be auto-populated when a row is inserted into the table.
+
+This file will contain one generator class (not to be confused with Python generator functions) per source database table.
+
+By default, SSG presumes that any primary keys it encounters will be auto-populated when a row is inserted into the table. This is often true, for example, when a column is declared as the `SERIAL` pseudo-type. However, this is not the case for the AirBnB dataset. For example, the `USERS` table's primary key `ID` column is of type `VARCHAR`. Running the next command, `create-data`, will produce an error:
+
+
+\begin{lstlisting}
+sqlsynthgen make-tables
+\end{lstlisting}
+
+% ```bash=
+% $ sqlsynthgen make-tables
+% ```
+
+% **When executed successfully, this command makes an `orm.py` file, containing the schema of the `airbnb` database. To use this file to replicate the schema in `dst`, we run the following command:**
+
+% ```bash=
+% $ sqlsynthgen create-tables
+% ```
+
+% Furthermore, we can use the `orm.py` file to make a Python module that generates synthetic data:
+
+% ```bash=
+% $ sqlsynthgen make-generators
+% ```
+
+
+
+
+\begin{lstlisting}
+\end{lstlisting}
+
 
 \subsection{Software Design and Development}
 
