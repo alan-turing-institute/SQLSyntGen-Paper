@@ -1,0 +1,216 @@
+\documentclass[11pt]{article}
+
+% this is the template for an issue of the Data Engineering Bulletin
+% % all packages used by any paper must be listed here
+\usepackage{deauthor,times,graphicx, url, enumitem}
+\graphicspath{{figures/}}
+
+\begin{document}
+\title{Transparent Decisions: Selective Information Disclosure With Synthetic Data}
+\author{C Gavidia-Calderon, S Harris, M Hauru, C Maple, I Stenson, M Yong}
+\date{\today} % Or specify a specific date
+\maketitle
+\begin{abstract}
+There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce an interpretable, risk guided approach to generating synthetic data in relational databases, to meet varying requirements in terms of data fidelity, utility and appetite for disclosure risk.
+\end{abstract}
+
+% Provide an overview of the challenges or problems the hospital was facing that prompted the need for a new software solution.
+% Introduce the software as a solution to these challenges.
+% State the objectives of the paper, including what the reader can expect to learn.
+\section{Introduction}
+
+Current mechanisms for addressing data sharing problems are necessarily a) time-consuming, b) linked to inadequate privacy measures protection, c) cause unnecessary friction to analysis, d) cannot be scaled to large datasets and/or e) cannot be applied to data in relational databases, a format in which many large datasets are stored.
+
+% Therefore tools like anonymisation, pseudonymisation, trusted research environments and synthetic data generators each can provide a degree of success in enabling access to data without the contracts. However, each of these tools are limited in their own ways.
+
+In this paper we will begin by enumerating different motivations for sharing hospital data. An understanding of motivations important because the requirements of appropriate data sharing mechanisms depend this. Why we want to share data decides what data needs to be shared, and this in turn enumerates the requirements to be met if the data can convincingly be shared safely. 
+
+We will then introduce a tool for generating synthetic data requirements of a) generating datasets in relational databases b) is scale-able c) has a process which enables transparency and accountability and d) enables the data owners to specify what exactly information to release in accordance to the risks they want to take on and the benefits they will accrue from releasing the information.
+
+% Offer a brief history of the hospital's operations related to the challenges being addressed (anonymisation, k-means)
+% Review the existing literature or previous solutions that have been tried or proposed in similar contexts, highlighting gaps or shortcomings that your software addresses (PrivLava, relational tables)
+% Requirements for transparency and auditability here??
+\section{Background}
+
+\subsection{Motivations for Data Sharing}
+
+Motivations for a hospital to share information about patient data with the public, or to analyse real patient data with external collaborators, using careful protocols meeting legal agreements include the following:
+
+\textbf{Enhancing Research Quality and Innovation} 
+Collaboration can lead to more comprehensive research studies, allowing healthcare practitioners and researchers to test hypotheses or observe trends across a broader dataset than what's available internally. This enhances the reproducibility and significance of research findings.
+
+\textbf{Access to Specialised Expertise} 
+External collaborators bring specialised knowledge and skills that complement the in-house capabilities of a hospital. For example, collaborations with methodology researchers can lead to state of the art data analysis and interpretation, thereby improving both tool development and research outcomes. Software engineers and machine learning operations (ML Ops) engineers can build customised cyber-physical infrastructure to support analysis of patient data in real time within the hospital.
+
+\textbf{Accelerating Medical Discoveries}
+By pooling resources and data between hospitals, research can proceed at a faster pace, potentially leading to quicker discoveries in disease mechanisms, treatment effectiveness, and development of new therapies or medical technologies. Sharing patient data can facilitate the recruitment of participants for clinical trials, ensuring a diverse and adequate sample size. This can be crucial in studying rare diseases or subtypes of common diseases, especially in hospitals that offer specialisations not commonly offered elsewhere in the world. 
+
+\textbf{Expanding Research Funding Opportunities} Collaborative research often has better chances of securing funding. Funding bodies frequently encourage or require collaboration across institutions as a criterion for grants, viewing it as a way to maximise the impact of their investment.
+
+\textbf{Benchmarking and Quality Improvement} Comparing data across institutions can help identify best practices and areas for improvement in patient care and management. This bench-marking can drive quality improvement initiatives within a hospital.
+
+\textbf{Education and Training} Collaborations provide educational opportunities to clinical research employees at hospitals, researchers and students at universities and research institutions, exposing them to different perspectives, methodologies, and cutting-edge research through joint ventures and knowledge exchanges.
+
+\textbf{Building Networks and Reputation} Collaborations can enhance a hospital’s reputation in the medical and scientific community. They extend the hospital’s influence and recognition, which can attract top talent and more collaborations in the future.
+
+\subsection{Mechanisms for Data Sharing}
+
+Hospitals enables external collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing mechanisms. These are designed to protect patient privacy while facilitating necessary research and collaboration. 
+
+\subsubsection{Honorary contracts for visiting researchers}
+
+One such mechanism is via honorary contracts. Getting an honorary contract with a hospital involves a lengthy series of steps designed to formalise the relationship between an individual (often a visiting researcher) and the hospital. These contracts are generally not paid positions but provide certain privileges and responsibilities within the hospital setting. 
+
+Typical steps for obtaining an honorary contract involve initial inquiry and application to the relevant department or clinical group at the hospital, credential verification, background and border security investigations before approval from the relevant departments can be granted. The honorary contracts can then be drafted, reviewed, and signed. The visiting researcher attends induction and training before being issued identification and necessary access to relevant records. Honorary contracts have to be monitored and reviewed regularly. 
+
+\subsubsection{Deidentification and Anonymisation of Patient Data}
+De-identification is the process of obscuring or replacing personal identifiers to prevent the direct association of data with an individual without necessarily eliminating the possibility of re-identification. As medical information is highly time-contextual, de-identified medical data will retain higher data utility if personal identifiers such as timestamps are not removed.
+
+Anonymisation ensures that data cannot be linked back to an individual by any means. Unlike de-identification, this process is irreversible. Data has to be stripped of all identifying details, this anonymised medical data has reduced richness of data and is limited what can be learnt from it. 
+
+Effectiveness of both de-identification and anonymization techniques is highly dependent on context, which includes the dimensionality, volume, and statistical properties of data. Other important aspects that need to be considered include which types of applications or analyses the data are to be used for, whether the data will be released publicly or with additional access control and whether the data are tabular, relational, or have longitudinal or transactional characteristics.
+
+\subsubsection{Trusted Research Environments}
+
+Trusted Research Environments (TREs) are an important part of the data sharing mechanisms ecosystem. TREs are the secure infrastructure and governance model that allows researchers to access and analyse data; they are often used in conjunction with other data-sharing mechanisms.
+
+TREs play a major role in controlling the data access levels. To begin with, data access is controlled through secure authentication and authorisation mechanisms. This means that only approved researchers can access the data, and they can only access specific datasets approved for their role and research projects. Activities on TREs are closely monitored and logged.
+
+In addition, TREs provide both physical and virtual security. Data in TREs are often stored in physically protected facilities. Virtual securities measures such as firewalls, intrusion detection systems and regular penetration testing maximise protection against external threats.  Finally, to ensure no privacy leakage, data egress from TREs are restricted. Researchers can analyse data within TREs but cannot take it out.
+
+This means that working with data within TREs is far from a comfortable experience. In order to provide security measures, computational resources can be limited and the list of approved software packages for analysis is restrictive and not easily updated. There is significant process overhead generated by the need for detailed authentication into remote machines, activity logging, monitoring and compliance checks. There is a steep learning curve in working within a TRE, new users are heavily dependent on support staff for technical assistance. Finally, the inability to egress data limits the sharing of interim findings and prevents close collaboration on ongoing data analysis. 
+
+\subsubsection{Synthetic Data Generators}
+
+Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. There is a balance to be struck here in regards to the application of generators; synthetic data which is very similar to the real dataset (high fidelity) risk leaking information about real patients (low privacy). However, the utility of low-fidelity datasets is limited; analysis conclusions are less likely to be applicable to real data.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\linewidth]{figures/ONS.png}
+\caption{Shows the range of fidelity for synthetic data. High fidelity data can result in higher utility, but also increased risk of identification.}
+\label{fig:Range of fidelity for synthetic data}
+\end{figure}
+
+Figure 1 shows the range of fidelity for synthetic data. In the context of medical data structurally correct datasets are datasets which has the same column names, tables and relationships as real data. Valid datasets imply that the values in the synthetic dataset is valid eg. a patient's date of death is not before their date of birth. Plausible datasets imply that the narrative structure of the data is intact eg. a patient with diabetes has more blood sugar recordings than a patient with a broken bone. Multivariate plausible implies that the values are correlated across different variables eg. a male patient like likely to be both heavier and taller than a female patient. A multivariate detailed dataset is even more realistic than a multivariate plausible data set, but less than a replica of the real data. 
+
+High fidelity data is likely to be more useful (analytic valuable), but also has an increased risk of identification (disclosure risk). The three factors: a) fidelity, b) utility and c) privacy are all factors to be decided according to different use cases. 
+
+For example, data for software testing may necessarily be low fidelity if they will be released to external contractors but it could still be useful by being only structurally correct.  Multivariate-plausible data could be sufficient for initial exploration, building pipe-lining and test modules for models, these tasks can be performed in a secure environment whose access is limited to students and researchers; these scripts ported into the hospital to be trained on real data if initial analysis is shown to be promising.
+
+\textit{NOTE: Carsten, can I have some help here please? Some words about state of the art generators and their applications and limitations would be really useful}
+
+\section{Use Case: Data Sharing at UCLH}
+
+\subsection{Introduction}
+
+This section introduces a case study to assess a hospital's requirements for making a convincing case to share data safely, and how some of those requirements can be met. 
+
+University College London Hospitals National Health Services Foundation (UCLH NHS) Trust  is a pioneering institution within the UK, renowned for its treatment care and specialist services not widely available in other NHS Trusts. It is closely affiliated with University College London; this is a partnership that emphasises research and education, integrating medical research and teaching at the undergraduate and postgraduate levels directly into the clinical environment. 
+
+As an institute that emphasises medical care, research and education, and as custodians of highly sensitive medical data, UCLH NHS Trust are in a position to leverage research capabilities to supercharge innovation if they can develop a process for thoughtful access to this data. However, consequences of accidentally releasing identifiable information include loss of individuals' privacy, loss of institutional prestige, as well as substantial legal fines.
+
+UCLH NHS Trust has identified two clear motivations for exploring data sharing options in their near future; they are a) Enable Access to Specialised Expertise and b) Education and Training. 
+
+\subsection{Problem Statement}
+
+Machine learning (ML) infrastructure are deployed in hospitals to enable AI in healthcare delivery and administration. ML infrastructure support tasks such as structuring data from electronic health records into a format that can be used as inputs to AI algorithms, deploying image analysis and predictive analysis tools and presenting the results to health care practitioners in a timely and useful format.
+
+To achieve these tasks, engineers who build the infrastructure need to gain an understanding of the data structures and data flow within the hospital. Researchers need to evaluate if target datasets meet their purposes for hypothesis testing, and is adequate in terms of quality and quantity. It is onerous to issue contracts to entire teams of engineers, researchers and students, but there are no other ways to share data with external collaborators. 
+
+However, what engineers and researchers working on early stages of exploratory analysis need to gain an understanding of the data in terms of content, structure and data flow is information \textbf{about} the data, not access to individual rows of data itself. This provides us the opportunity to frame the problem as: What information can be released about sensitive data, which is maximally beneficial to engineers and researchers with minimal cost to patient privacy?
+
+\subsection{Challenges}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{To generate synthetic data using statistical properties or marginals of real data.
+    }
+    
+    Hospitals are mandated or encouraged by various information acts to release hospital information to the public. The main reason for this is allowing insights into quality of care provided by public or insurance funds. Another reason is to enable patients to make informed decisions regarding where to seek care based on hospital performance and specialisations. 
+
+    The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistics on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise on individual patient privacy.  
+
+    Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. Therefore, a synthetic hospital dataset that is generated using public statistical properties will not leak patient information any more than the release of those statistical properties has, already. 
+
+    \item \textbf{To generate large synthetic relational datasets.
+    }
+    
+    Many data holders, including hospitals store patient electronic health records in relational databases. Data is often structured within complex schema that capture both single observations and time series data. These relational databases also include tables for vocabularies such as definitions of drugs, observations and diagnoses. 
+
+    Under this challenge a minimally useful synthetic dataset must at the very least a) be structurally correct. That is, it will contain the same tables, columns, and data types, and b) meet foreign key constraints. In order to increase analytical value as shown in Figure 1, the synthetic generator will need to generate values which are valid and plausible eg. valid gender values, plausible distribution of height and weight.  A multivariate plausible dataset will have values that correlate across multiple tables eg. the correlation between gender and height are represented across the Demographic and Observation tables. 
+    
+    An additional complexity here is in generating synthetic time series data eg. blood pressure values every ten minutes for a patient in intensive care unit. In order to be multivariate plausible, the data needs to contain the correct frequencies for data collection as well as plausible values that depend on a patient's physiology. This is generated across multiple tables as well.  
+
+    \item \textbf{To communicate clearly what information is being taken out from hospital data.
+    }
+    
+    Differential privacy is the gold standard that protects individual data within a dataset while still allowing for the useful analysis of the aggregate data. However, the role of this concept when applied to synthetic data is challenging to explain. 
+    
+    Synthetic data is complex, people may not understand how data that does not represent real individuals still needs privacy considerations. Differential privacy is both technical and abstract and there is a struggle to understand how it offers probabilistic but not absolute guarantees. Explaining this to custodians of highly sensitive data is difficult because privacy is expected but not always technically feasible.
+    
+    The application of differential privacy to synthetic data compounds the explanations' complexities. However this is a important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differentially private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
+\end{enumerate}
+
+% Describe the methodology used in developing the software, including any frameworks, programming languages, or tools utilized (SSG, SQLAlchemy)
+% Outline the software's architecture and components, explaining how each contributes to solving the hospital's challenges. (YAML file, sql injections)
+% Discuss any innovative features or approaches used in the software's design and development.
+\section{Synthetic Data Generator for Relational Databases}
+
+\subsection{Introduction}
+
+% So far, I observe that most of our work has been in the area of generating synthetic data. Our collaborators are now interested in evaluating the risks of releasing the synthetic data, by some form of privacy measurement. As a response, Turing is building a privacy evaluation toolbox which implements a number of attacks against generators. 
+
+% Notes: effectiveness of different anonymization techniques highly depends on context, which includes the dimensionality, volume, and statistical properties of data. Other important aspects that need to be considered include which types of applications or analyses the data are to be used for,whether the data will be released publicly or with additional access control and whether the data are tabular or have longitudinal or transactional characteristics.
+
+SqlSynthGen (SSG) is a software package that we have written to meet the challenges described above. When pointed to an existing relational database, SSG creates another database with the same schema, copies over the non-sensitive data such as vocabulary tables and finally populates it with synthetic data. The default behaviour of SSG is to create only structurally correct data, which is on the far left end of the spectrum in Figure 1. 
+
+SSG's default output is structurally correct and has no disclosure risk. No information about the sensitive information has been disclosed, beyond the structure in which they are stored. However, this can already be useful for e.g. software testing needs, and can be safely released if vocabularies and schema can be shared.
+
+SSG also generates synthetic data which is up to multivariate plausible. SSG enables the user to define SQL statements to extract statistical properties of the real data. These values are then used to form the distributions and marginals of the synthetic data. This allows customisation of the data generation to move towards the right in a selective manner, where the user specifies exactly which marginals are extracted from the source data, and how they are used to inform the synthetic data. This allows for agile development with incremental fidelity improvements as needed, with transparency, auditability, and control over privacy risk at all stages. The user can also choose to use differential privacy to protect the marginals extracted from the source data.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.8\linewidth]{figures/SSG.png}
+\caption{The processes of SQLSynthGen in order}
+\label{fig:Range of fidelity for synthetic data}
+\end{figure}
+
+SSG as described in Figure 2, works as follows:
+
+\begin{enumerate}
+    \item SSG discovers the schema of the real and creates a new database as destination for synthetic data generated in Step 3.
+    \item It copies over some tables entirely. This is for lookup tables without any privacy concerns.
+    \item By default, SSG populates the destination database with only structurally correct data. Alternatively, SSG extracts statistics from the source database to parameterise custom generators to make higher fidelity synthetic data. For example, we could extract mean height by age and gender and define some custom data generators to create a relationship between them. The user decides what is extracted and writes the custom generators as Python functions.
+\end{enumerate}
+
+\subsection{Software Design and Development}
+
+
+
+% Detail how the software was implemented within the hospital's existing systems and workflows. (Not yet, but plans?)
+% Describe any challenges encountered during the implementation phase and how they were overcome. (Steve?)
+% Discuss the training and support provided to the hospital staff to facilitate the adoption of the software. (Steve?)
+\section{Plans for Implementation}
+
+% \section{Case Study: Application in the Hospital}
+% Provide a detailed account of how the software is being used within the hospital, accompanied by real-world examples or case studies.
+% Include data or metrics that illustrate the software's impact on the hospital's operations, such as improved efficiency, reduced errors, or enhanced patient care. (Contracts?)
+
+% \section{Evaluation and Results}
+% Present an analysis of the software's performance based on predefined metrics or objectives. (How much time it takes to produce the x synthetic patients? Can we describe the tables here? Vocabulary?)
+% Compare the hospital's operations before and after the software's implementation to demonstrate its effectiveness. (How???)
+% Include feedback from the hospital staff and patients, if available, to provide a comprehensive view of the software's impact. (Patient engagement group?)
+
+\section{Discussion}
+Interpret the results, discussing the significance of the software's impact on the hospital.
+Explore the broader implications of your findings for similar institutions or settings (any relational tables, HSBC?)
+Address any limitations of your study or software and suggest areas for future research or development. (SECURITY!!!)
+
+\section{Conclusion}
+Summarise the key points made throughout the paper, reiterating the software's role in addressing the hospital's challenges.
+Reflect on the broader contributions of work to the field of healthcare IT.
+
+% References
+\begin{thebibliography}{}
+    % Bibliography entries here
+\end{thebibliography}
+\end{document}
