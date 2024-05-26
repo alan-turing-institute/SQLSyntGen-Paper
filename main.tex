@@ -188,104 +188,165 @@ SSG's steps for generating synthetic relational datasets as shown in Figure 2, a
 
 \begin{enumerate}
     \item SSG discovers the schema of the real and creates a new database to store synthetic data. This new database will be populated in Step 3 below. 
-    \item SSG copies over some tables entirely. This step is to maintain foreign key constraints, and is used to support lookup tables which do not have any privacy concerns.
+    \item SSG copies over some tables entirely. This step is to maintain foreign key constraints, and is used to populate lookup tables which do not have any privacy concerns.
     \item By default, SSG populates the destination database with only structurally correct data. \item Alternatively, SSG extracts statistics from the source database to parameterise custom generators to make higher fidelity synthetic data. For example, we could extract mean height by age and gender and define some custom data generators to create a relationship between them. The user decides what is extracted and writes the custom generators as Python functions.
 \end{enumerate}
 
 \subsection{SqlSynthGen: Example with AirBnB relational dataset}
 
-Let us consider that the AirBnb data is contained in the airbnb database in a local PostgreSQL instance, and we want to port it to the `dst` database. 
+\subsubsection{Create default synthetic data}
 
-\subsubsection{Replicate structure of real dataset}
+For reference in this example, Let us consider that an AirBnb dataset[] is contained in an `airbnb` database` in a local PostgreSQL instance, and we want to port it to a new `dst` database, and populate the `dst` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
 
 First, we need to provide SSG with the connection parameters to the real dataset, using a .env file like the following:
 
 \begin{minted}[
-    gobble=4,
+    gobble=2,
     frame=single,
-    linenos
+    % linenos
   ]{yaml}
     SRC_HOST_NAME=localhost 
-    SRC_USER_NAME=postgres 
     SRC_USER_NAME=postgres 
     SRC_PASSWORD=password
     SRC_DB_NAME=airbnb 
     DST_HOST_NAME=localhost 
-    DST_USER_NAME=postgres 
-    DST_PASSWORD=password 
-    DST_DB_NAME=dst
+    :
+    DST_DB_NAME=airbnbsynthetic
 \end{minted}
 
-We can start the schema migration process by running \mintinline{bash}{sqlsynthgen make-tables} on the command line. When executed successfully, this command makes Python file \mintinline{bash}{orm.py} which contains the schema of the `airbnb` database. We use this file to replicate the schema in `dst`, by running \mintinline{bash}{sqlsynthgen create-tables}. 
+We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables} and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
 
-\subsubsection{Replicate structure of real dataset}
-
-This creates an ssg.py file that contains one generator class (not to be confused with Python generator functions) per source database table. By default, without any user configuration, the data produced by these generators fulfills the schema of the original data: the data types are correct and the foreign key and uniqueness constraints are respected.
-
-We also use the `orm.py` file to make a Python module that generates default synthetic data:
-
-```bash=
-$ sqlsynthgen make-generators
-```
-
-This file will contain one generator class (not to be confused with Python generator functions) per source database table.
-
-By default, SSG presumes that any primary keys it encounters will be auto-populated when a row is inserted into the table.
-
-This file will contain one generator class (not to be confused with Python generator functions) per source database table.
-
-By default, SSG presumes that any primary keys it encounters will be auto-populated when a row is inserted into the table. This is often true, for example, when a column is declared as the `SERIAL` pseudo-type. However, this is not the case for the AirBnB dataset. For example, the `USERS` table's primary key `ID` column is of type `VARCHAR`. Running the next command, `create-data`, will produce an error:
+The first file, \texttt{orm.py}, delineates the structure of the Postgres \texttt{airbnb} dataset by mapping each table in \texttt{airbnb} to a Python class, with table columns represented as class variables. This file is utilised to generate a new, empty \texttt{dst} database with the necessary tables, columns, and data types. The following snippet from \texttt{orm.py} illustrates the representation of the \texttt{users} table from the \texttt{airbnb}  dataset as a Python class.
 
 
-\begin{lstlisting}
-sqlsynthgen make-tables
-\end{lstlisting}
+\begin{minted}[
+    % gobble=2,
+    frame=single,
+    % linenos
+  ]{Python}
+class User(Base):
+    __tablename__ = "users"
 
-% ```bash=
-% $ sqlsynthgen make-tables
-% ```
+    id = Column(String, primary_key=True)
+    date_account_created = Column(Date)
+    ...
+\end{minted}
 
-% **When executed successfully, this command makes an `orm.py` file, containing the schema of the `airbnb` database. To use this file to replicate the schema in `dst`, we run the following command:**
+The second file, \texttt{ssg.py}, contains Python code for generating default synthetic data for each table in the new \texttt{`dst`} database. The following snippet demonstrates code for generating an \texttt{ID} and \texttt{date\_account\_created} for the \texttt{user} table. \texttt{ID} is assigned generic, password-like values, and the \texttt{date\_account\_created} is assigned a random date value. We execute \mintinline{bash}{sqlsynthgen create-data} to populate \texttt{dst} with values generated by \texttt{ssg.py}.
 
-% ```bash=
-% $ sqlsynthgen create-tables
-% ```
+This design choice provides template code that generates default values but also allows users to customise how synthetic values for a variable are generated.
 
-% Furthermore, we can use the `orm.py` file to make a Python module that generates synthetic data:
+\begin{minted}[
+    % gobble=2,
+    frame=single,
+    % linenos
+  ]{Python}
+class usersGenerator:
+    num_rows_per_pass = 1
 
-% ```bash=
-% $ sqlsynthgen make-generators
-% ```
+    def __init__(self, src_db_conn, dst_db_conn):
+        pass
+        self.id = generic.person.password()
+        self.date_account_created = generic.datetime.date()
+        ...
+\end{minted}
+
+\subsubsection{Copy vocabulary tables}
+
+In this section, we demonstrate how to designate vocabulary tables so that they will be copied in their entirety, avoiding the need to generate synthetic values for them. We specify vocabulary tables in a \texttt{config.yaml}. 
+
+\begin{minted}[
+    gobble=2,
+    frame=single,
+    % linenos
+  ]{yaml}
+    tables:
+        countries:
+            vocabulary_table: true
+\end{minted}
+
+All values in a vocabulary table are copied to an auto-generated \texttt{.yaml} file. In this snippet below, the vocabulary table \texttt{country} include a list of countries and their associated properties. 
+
+This design choice enables users to verify each value extracted from the real dataset, maximizing transparency and auditability.
+
+\begin{minted}[
+    gobble=2,
+    frame=single,
+    % linenos
+  ]{yaml}
+    - country_destination: AU
+      destination_km2: 7741220
+      destination_language: eng
+        :
+    - country_destination: CA
+      destination_km2: 9984670
+      destination_language: eng
+      distance_km: 2828.1333
+        :
+\end{minted}
+
+\subsubsection{Create synthetic data based on statistics from real data}
+
+In order to generate normally-distributed values with the right mean and standard deviation for the users.age column, we would define a config.yaml with the following content (on top of the configurations we wrote in the previous sections):
+
+\begin{minted}[
+    gobble=2,
+    frame=single,
+    % linenos
+  ]{yaml}
+    src-stats:
+        - name: age_stats
+        query: >
+        SELECT AVG(age)::float AS mean, STDDEV(age)::float AS std_dev
+        FROM users
+        WHERE age <= 100
+    tables:
+        users:
+            row_generators:
+              - name: airbnb_generators.user_age_provider
+                kwargs:
+                  query_results: SRC_STATS["age_stats"]
+                columns_assigned: age
+\end{minted}
+
+\begin{minted}[
+    gobble=2,
+    frame=single,
+    % linenos
+  ]{yaml}
+    age_stats:
+    - mean: 36.54434029695572
+      std_dev: 11.708339792587486
+\end{minted}
+
+\begin{minted}[
+    gobble=0,
+    frame=single,
+    % linenos
+  ]{Python}
+    import random
+    
+    def user_age_provider(query_results):
+    # The [0] picks up the first row of the query results. This is needed because all
+    # query results are always tables, and could in principle have many rows.
+    mean: float = query_results[0]["mean"]
+    std_dev: float = query_results[0]["std_dev"]
+    return random.gauss(mean, std_dev)
+\end{minted}
+
+% \subsection{Software Design and Development}
 
 
-
-
-\begin{lstlisting}
-\end{lstlisting}
-
-
-\subsection{Software Design and Development}
-
-
-
+\section{Plans for Implementation}
 % Detail how the software was implemented within the hospital's existing systems and workflows. (Not yet, but plans?)
 % Describe any challenges encountered during the implementation phase and how they were overcome. (Steve?)
 % Discuss the training and support provided to the hospital staff to facilitate the adoption of the software. (Steve?)
-\section{Plans for Implementation}
-
-% \section{Case Study: Application in the Hospital}
-% Provide a detailed account of how the software is being used within the hospital, accompanied by real-world examples or case studies.
-% Include data or metrics that illustrate the software's impact on the hospital's operations, such as improved efficiency, reduced errors, or enhanced patient care. (Contracts?)
-
-% \section{Evaluation and Results}
-% Present an analysis of the software's performance based on predefined metrics or objectives. (How much time it takes to produce the x synthetic patients? Can we describe the tables here? Vocabulary?)
-% Compare the hospital's operations before and after the software's implementation to demonstrate its effectiveness. (How???)
 % Include feedback from the hospital staff and patients, if available, to provide a comprehensive view of the software's impact. (Patient engagement group?)
 
+
 \section{Discussion}
-Interpret the results, discussing the significance of the software's impact on the hospital.
-Explore the broader implications of your findings for similar institutions or settings (any relational tables, HSBC?)
-Address any limitations of your study or software and suggest areas for future research or development. (SECURITY!!!)
+% Explore the broader implications of your findings for similar institutions or settings (any relational tables, HSBC?)
+% Address any limitations of your study or software and suggest areas for future research or development. (SECURITY!!!)
 
 \section{Conclusion}
 Summarise the key points made throughout the paper, reiterating the software's role in addressing the hospital's challenges.
