@@ -11,7 +11,7 @@
 \date{\today} % Or specify a specific date
 \maketitle
 \begin{abstract}
-There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce an interpretable, risk guided approach to generating synthetic data in relational databases, to meet varying requirements in terms of data fidelity, utility and appetite for disclosure risk.
+There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce a human-readable, risk guided approach to generating synthetic data in relational databases, to meet varying requirements in terms of data fidelity, utility and appetite for disclosure risk.
 \end{abstract}
 
 % Provide an overview of the challenges or problems the hospital was facing that prompted the need for a new software solution.
@@ -163,7 +163,7 @@ However, what engineers and researchers working on early stages of exploratory a
 % Discuss any innovative features or approaches used in the software's design and development.
 \section{Synthetic Data Generator for Relational Databases}
 
-\subsection{SqlSynthGen: Introduction}
+\subsection{SQLSynthGen: Introduction}
 
 % So far, I observe that most of our work has been in the area of generating synthetic data. Our collaborators are now interested in evaluating the risks of releasing the synthetic data, by some form of privacy measurement. As a response, Turing is building a privacy evaluation toolbox which implements a number of attacks against generators. 
 
@@ -175,7 +175,7 @@ However SSG can be configured to generates synthetic data which, on the Figure 1
 
 SSG configuration allows dataset output to be shifted towards the right in a selective manner. The user specifies exactly which marginals are extracted from the source data, and how they are used to inform the synthetic data. SSG configuration allows for agile development with incremental fidelity improvements only as specified, with transparency, auditability, and control over privacy risk at all stages. The user can also choose to use differential privacy to protect the marginals extracted from the source data.
 
-\subsection{SqlSynthGen: Process for Generating Synthetic Data}
+\subsection{SQLSynthGen: Process for Generating Synthetic Data}
 
 \begin{figure}[ht]
 \centering
@@ -194,9 +194,9 @@ SSG's steps for generating synthetic relational datasets as shown in Figure 2, a
 
 \subsection{SqlSynthGen: Example with AirBnB relational dataset}
 
-\subsubsection{Create default synthetic data}
+\subsubsection{Set up default configuration}
 
-For reference in this example, Let us consider that an AirBnb dataset[] is contained in an `airbnb` database` in a local PostgreSQL instance, and we want to port it to a new `dst` database, and populate the `dst` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
+For reference in this example, let us consider that an AirBnb dataset[] is contained in an `airbnb` database` in a local PostgreSQL instance, and we want to port it to a new `dst` database, and populate the `dst` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
 
 First, we need to provide SSG with the connection parameters to the real dataset, using a .env file like the following:
 
@@ -217,7 +217,6 @@ First, we need to provide SSG with the connection parameters to the real dataset
 We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables} and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
 
 The first file, \texttt{orm.py}, delineates the structure of the Postgres \texttt{airbnb} dataset by mapping each table in \texttt{airbnb} to a Python class, with table columns represented as class variables. This file is utilised to generate a new, empty \texttt{dst} database with the necessary tables, columns, and data types. The following snippet from \texttt{orm.py} illustrates the representation of the \texttt{users} table from the \texttt{airbnb}  dataset as a Python class.
-
 
 \begin{minted}[
     % gobble=2,
@@ -253,7 +252,7 @@ class usersGenerator:
 
 \subsubsection{Copy vocabulary tables}
 
-In this section, we demonstrate how to designate vocabulary tables so that they will be copied in their entirety, avoiding the need to generate synthetic values for them. We specify vocabulary tables in a \texttt{config.yaml}. 
+In this section, we demonstrate how to designate vocabulary tables so that they will be copied in their entirety, avoiding the need to generate synthetic values for them. We specify vocabulary tables in a \texttt{config.yaml}; the section below denotes table\texttt{countries} as a vocabulary table.
 
 \begin{minted}[
     gobble=2,
@@ -266,8 +265,6 @@ In this section, we demonstrate how to designate vocabulary tables so that they 
 \end{minted}
 
 All values in a vocabulary table are copied to an auto-generated \texttt{.yaml} file. In this snippet below, the vocabulary table \texttt{country} include a list of countries and their associated properties. 
-
-This design choice enables users to verify each value extracted from the real dataset, maximizing transparency and auditability.
 
 \begin{minted}[
     gobble=2,
@@ -285,9 +282,13 @@ This design choice enables users to verify each value extracted from the real da
         :
 \end{minted}
 
-\subsubsection{Create synthetic data based on statistics from real data}
+This design choice enables users to verify each value extracted from the real dataset, maximising transparency and enabling audit.
 
-In order to generate normally-distributed values with the right mean and standard deviation for the users.age column, we would define a config.yaml with the following content (on top of the configurations we wrote in the previous sections):
+\subsubsection{Incorporate aggregate statistics}
+
+This section shows how we incorporate aggregate statistics of real data in order to generate synthetic data that retains those statistical properties.
+
+For example, we would like to generate normally distributed synthetic values for the users.age column, with reference to the mean and standard deviation values of the real data. SSG connects to the database and discovers requisite statistical values by running user-defined SQL statements in the \texttt{age\_stats} section of a \texttt{config.yaml} file.
 
 \begin{minted}[
     gobble=2,
@@ -309,6 +310,8 @@ In order to generate normally-distributed values with the right mean and standar
                 columns_assigned: age
 \end{minted}
 
+Results from running these SQL statements are recorded in an auto-generated \texttt{src-stats.yaml} file. This SSG design choice enables users to access a human-readable record of what has been extracted from the real data.
+
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -319,20 +322,26 @@ In order to generate normally-distributed values with the right mean and standar
       std_dev: 11.708339792587486
 \end{minted}
 
+All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referenced by the Python data generators to return a distribution of values that meet those mean and standard deviation values.
+
 \begin{minted}[
     gobble=0,
     frame=single,
     % linenos
   ]{Python}
     import random
-    
     def user_age_provider(query_results):
-    # The [0] picks up the first row of the query results. This is needed because all
-    # query results are always tables, and could in principle have many rows.
     mean: float = query_results[0]["mean"]
     std_dev: float = query_results[0]["std_dev"]
     return random.gauss(mean, std_dev)
 \end{minted}
+
+\subsubsection{Build multivariate relationships across tables}
+
+Story generators are the most complex SSG configuration option. These address generating synthetic data with correlations that bridge different tables and multiple rows.
+
+An SSG story generator is a Python generator (an unfortunate clash of terminology: Python uses the term “generator” to refer to objects that yield multiple values in a sequence), written by the user, that yields sets of rows to be written into the synthetic database. For instance, it may first yield a row specifying a person in the users table, and then a set of multiple rows for the sessions table that specify various browsing sessions this user has had. This set of multiple rows can be related in any user-defined way eg. values increasing over time, according to a specific step change.
+
 
 % \subsection{Software Design and Development}
 
