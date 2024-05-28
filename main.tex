@@ -2,7 +2,7 @@
 
 % this is the template for an issue of the Data Engineering Bulletin
 % % all packages used by any paper must be listed here
-\usepackage{deauthor,times,graphicx, url, enumitem,listings,minted}
+\usepackage{deauthor,times,graphicx, url, enumitem,listing ,minted}
 \graphicspath{{figures/}}
 
 \begin{document}
@@ -165,8 +165,6 @@ However, what engineers and researchers working on early stages of exploratory a
 
 \subsection{SQLSynthGen: Introduction}
 
-% So far, I observe that most of our work has been in the area of generating synthetic data. Our collaborators are now interested in evaluating the risks of releasing the synthetic data, by some form of privacy measurement. As a response, Turing is building a privacy evaluation toolbox which implements a number of attacks against generators. 
-
 SqlSynthGen (SSG) is a software package that we have written to meet the challenges described in Section 3.3. When linked to an existing relational database, SSG creates new empty database with the same schema, copies over the non-sensitive data such as vocabulary tables and finally populates it with synthetic data. 
 
 SSG's default output dataset is structurally correct and has no disclosure risk. These are datasets that sit on the far left end of the spectrum in Figure 1. No information about the real dataset has been disclosed, beyond the structure in which they are stored. However, this can already be useful e.g. for building software testing modules and pipe-lining scripts, and can be safely released if vocabularies and schema can be shared.
@@ -192,14 +190,19 @@ SSG's steps for generating synthetic relational datasets as shown in Figure 2, a
     \item By default, SSG populates the destination database with only structurally correct data. \item Alternatively, SSG extracts statistics from the source database to parameterise custom generators to make higher fidelity synthetic data. For example, we could extract mean height by age and gender and define some custom data generators to create a relationship between them. The user decides what is extracted and writes the custom generators as Python functions.
 \end{enumerate}
 
-\subsection{SqlSynthGen: Example with AirBnB relational dataset}
+For more information and tutorials about SQLSynthGen, please refer to our repository at \url{https://github.com/alan-turing-institute/sqlsynthgen}. Our repository \cite{repository} contains installation instructions, comprehensive documentation and trouble shooting guides to help get started with the software. The repository also contains a simple tutorial using a Kaggle dataset \cite{airbnb} as well as an advanced example based on the Observational Medical Outcomes Partnership (OMOP)\cite{omop}, which provides a standardised data model for observational healthcare data. 
+
+\subsection{SQLSynthGen: Example Usage with AirBnB Relational Dataset}
+
+The next section demonstrates the use of SSG in creating synthetic data based a publicly available AirBnB Kaggle dataset \cite{airbnb}. Install SQLSynthGen with \texttt{pip install sqlsynthgen}. To verify that the installation was successful run \texttt{sqlsynthgen --help} at the terminal, within the work directory. 
 
 \subsubsection{Set up default configuration}
 
-For reference in this example, let us consider that an AirBnb dataset[] is contained in an `airbnb` database` in a local PostgreSQL instance, and we want to port it to a new `dst` database, and populate the `dst` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
+For reference in this example, let us consider that our AirBnb dataset is contained in an `airbnb` database in a local PostgreSQL instance. We want to port the schema to a new `airbnb\_synthetic` database, and populate the `airbnb\_synthetic` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
 
-First, we need to provide SSG with the connection parameters to the real dataset, using a .env file like the following:
+First, we need to provide SSG with the connection parameters to the real dataset, using a \texttt{.env} file in listing \ref{lst:.env}.
 
+\begin{listing}[H]
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -211,13 +214,19 @@ First, we need to provide SSG with the connection parameters to the real dataset
     SRC_DB_NAME=airbnb 
     DST_HOST_NAME=localhost 
     :
-    DST_DB_NAME=airbnbsynthetic
+    DST_DB_NAME=airbnb_synthetic
 \end{minted}
+\caption{Example configuration for .env file"}
+\label{lst:.env}
+\end{listing}
 
 We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables} and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
 
-The first file, \texttt{orm.py}, delineates the structure of the Postgres \texttt{airbnb} dataset by mapping each table in \texttt{airbnb} to a Python class, with table columns represented as class variables. This file is utilised to generate a new, empty \texttt{dst} database with the necessary tables, columns, and data types. The following snippet from \texttt{orm.py} illustrates the representation of the \texttt{users} table from the \texttt{airbnb}  dataset as a Python class.
+The first file, \texttt{orm.py}, delineates the structure of the Postgres `airbnb` dataset by mapping each table in 'airbnb' to a Python class, with table columns represented as class variables. This mapping is generated using SQLAlchemy\cite{sqlalchemy}, which is a SQL toolkit and Object-Relational Mapping (ORM) library for Python. The use of SQLAlchemy in SSG means that no further user configuration is required to describe the schema of the original dataset. 
 
+The \texttt{orm.py} file is then used as basis to make a new `airbnb\_synthetic` Postgres database with the necessary tables, columns, and data types. Listing \ref{lst:orm.py} shows a snippet from \texttt{orm.py} which illustrates the representation of the \texttt{users} table from the `airbnb`  dataset as a Python class.
+
+\begin{listing}[H]
 \begin{minted}[
     % gobble=2,
     frame=single,
@@ -230,11 +239,15 @@ class User(Base):
     date_account_created = Column(Date)
     ...
 \end{minted}
+\caption{Postgres table `User` represented as a Python class}
+\label{lst:orm.py}
+\end{listing}
 
-The second file, \texttt{ssg.py}, contains Python code for generating default synthetic data for each table in the new \texttt{`dst`} database. The following snippet demonstrates code for generating an \texttt{ID} and \texttt{date\_account\_created} for the \texttt{user} table. \texttt{ID} is assigned generic, password-like values, and the \texttt{date\_account\_created} is assigned a random date value. We execute \mintinline{bash}{sqlsynthgen create-data} to populate \texttt{dst} with values generated by \texttt{ssg.py}.
+The second file, \texttt{ssg.py}, contains auto-generated Python code for populating each table column. This code generates default synthetic values that match the data types defined by the database schema but are not related to the actual data. The provision of human-readable code enables transparency about how each table column is populated. It can be used as a template that users can edit to incorporate different generation methods as needed.
 
-This design choice provides template code that generates default values but also allows users to customise how synthetic values for a variable are generated.
+Listing \ref{lst:ssg.py} demonstrates the auto-generated Python code for generating `id` and `date\_account\_created` values for the `User` table. `id` is assigned generic, password-like values, and `date\_account\_created` is assigned a random date value. We execute \mintinline{bash}{sqlsynthgen create-data} to populate `airbnb\_synthetic` with values generated by \texttt{ssg.py}.
 
+\begin{listing}[H]
 \begin{minted}[
     % gobble=2,
     frame=single,
@@ -249,6 +262,9 @@ class usersGenerator:
         self.date_account_created = generic.datetime.date()
         ...
 \end{minted}
+\caption{A Python class for generating synthetic id and date\_account\_created values for Postgres table `User`}
+\label{lst:ssg.py}
+\end{listing}
 
 \subsubsection{Copy vocabulary tables}
 
@@ -342,9 +358,7 @@ Story generators are the most complex SSG configuration option. These address ge
 
 An SSG story generator is a Python generator (an unfortunate clash of terminology: Python uses the term “generator” to refer to objects that yield multiple values in a sequence), written by the user, that yields sets of rows to be written into the synthetic database. For instance, it may first yield a row specifying a person in the users table, and then a set of multiple rows for the sessions table that specify various browsing sessions this user has had. This set of multiple rows can be related in any user-defined way eg. values increasing over time, according to a specific step change.
 
-
 % \subsection{Software Design and Development}
-
 
 \section{Plans for Implementation}
 % Detail how the software was implemented within the hospital's existing systems and workflows. (Not yet, but plans?)
@@ -363,6 +377,22 @@ Reflect on the broader contributions of work to the field of healthcare IT.
 
 % References
 \begin{thebibliography}{}
-    % Bibliography entries here
+    \bibitem{repository}
+    C Gavidia-Calderon, M Hauru, I Stenson, M Yong, "sqlsynthgen" 2024. [Online]. Available: \url{https://github.com/alan-turing-institute/sqlsynthgen}.
+    \bibitem{omop}
+    Observational Medical Outcomes Partnership (OMOP), "OMOP Common Data Model" 2024. [Online]. Available: \url{https://www.ohdsi.org/data-standardization/the-common-data-model/}.
+    \bibitem{airbnb}
+    Airbnb New User Bookings, "Airbnb New User Bookings" Kaggle, Year. [Online]. Available: \url{https://www.kaggle.com/competitions/airbnb-recruiting-new-user-bookings}. [Accessed: November, 25, 2015].
+    \bibitem{sqlalchemy}
+    M. Bayer, ``SQLAlchemy,'' [Online]. Available: \url{https://www.sqlalchemy.org/}
+\label{lst:.env file}
+
+
+
+\end{thebibliography}
+
+\end{document}
+
+
 \end{thebibliography}
 \end{document}
