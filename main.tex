@@ -5,27 +5,62 @@
 \usepackage{deauthor,times,graphicx, url, enumitem,listing ,minted}
 \graphicspath{{figures/}}
 
+% Carlos' Latex Packages
+\usepackage[colorinlistoftodos]{todonotes}
+% \setuptodonotes{inline}
+
 \begin{document}
 \title{Transparent Decisions: Selective Information Disclosure With Synthetic Data}
-\author{C Gavidia-Calderon, S Harris, M Hauru, C Maple, I Stenson, M Yong}
+\author{
+Carlos Gavidia-Calderon$^1$, Steve Harris$^2$, Markus Hauru$^1$, Carsten Maple$^1$, Iain Stenson$^1$, and \\ May Yong$^1$ \\~\\
+$^1$The Alan Turing Institute \\
+$^2$University College London
+}
 \date{\today} % Or specify a specific date
 \maketitle
 \begin{abstract}
-There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce a human-readable, risk guided approach to generating synthetic data in relational databases, to meet varying requirements in terms of data fidelity, utility and appetite for disclosure risk.
+There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce a human-readable, risk guided approach to generating synthetic data in \todo{from?} relational databases, to meet varying requirements in terms of data fidelity, utility and appetite for disclosure risk \todo{I think risk-disclosure sounds better} .
 \end{abstract}
+
+\section{Introduction*}
+
+Hospitals currently manage and produce large quantities of historical
+patient data.
+While medical staff access this data frequently for their daily duties,
+other professional communities ---scientists, software engineers, or educators--- need to follow lengthy processes to be granted
+access.
+This process usually involves background checks, contract signing, and 
+accessing data only via a highly-restricted computing environment~\cite{harris2022}.
+Patient data is highly sensitive~\cite{schomerus2022}, so controls are in place to ensure patient privacy.
+
+While protecting patient privacy is of utmost importance, limiting access to 
+patient data hinders its potential.
+For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised
+treatments~\cite{tucker2020}.
+Patient data can be used to improve hospital productivity, when shared
+with external specialists.
+For example, software engineers and data scientists could develop real-time dashboards 
+for tracking patients, staff, and equipment.
+And, if shared with academic institutions, patient data can be used to train the next generation of clinicians and researchers.
+
+In order to both protect user privacy \emph{and} maximise access, we can use techniques like de-identification and aggregation over the original data before handling 
+it to a third party.
+While these techniques provide an extra layer of privacy protection, they are not exempt from vulnerabilities~\cite{near2021}.
+For example, de-identification does remove identifying information from a dataset, but data releases are still susceptible to linkage attacks.
+Aggregations requires releasing only aggregate population metrics, like counts or averages, but this still leaves outliers vulnerable to identification~\cite{tucker2020}.
 
 % Provide an overview of the challenges or problems the hospital was facing that prompted the need for a new software solution.
 % Introduce the software as a solution to these challenges.
 % State the objectives of the paper, including what the reader can expect to learn.
 \section{Introduction}
 
-Current mechanisms for addressing data sharing problems are necessarily a) time-consuming, b) linked to inadequate privacy measures protection, c) cause unnecessary friction to analysis, d) cannot be scaled to large datasets and/or e) cannot be applied to data in relational databases, a format in which many large datasets are stored.
+Current mechanisms for addressing data sharing problems are necessarily \todo{I would soften the claim to ``can be'', and probably add a citation} a) time-consuming, b) linked to inadequate privacy measures protection, c) cause unnecessary friction to analysis, d) cannot be scaled to large datasets and/or e) cannot be applied to data in relational databases, a format in which many large datasets are stored.
 
 % Therefore tools like anonymisation, pseudonymisation, trusted research environments and synthetic data generators each can provide a degree of success in enabling access to data without the contracts. However, each of these tools are limited in their own ways.
 
-In this paper we will begin by enumerating different motivations for sharing hospital data. An understanding of motivations important because the requirements of appropriate data sharing mechanisms depend this. Why we want to share data decides what data needs to be shared, and this in turn enumerates the requirements to be met if the data can convincingly be shared safely. 
+In this paper we will begin by enumerating different motivations for sharing hospital data. An understanding of motivations important because the requirements of appropriate data sharing mechanisms depend this \todo{depend on this?}. Why we want to share data decides what data needs to be shared, and this in turn enumerates the requirements to be met if the data can convincingly be shared safely. 
 
-We will then introduce a tool for generating synthetic data requirements of a) generating datasets in relational databases b) is scale-able c) has a process which enables transparency and accountability and d) enables the data owners to specify what exactly information to release in accordance to the risks they want to take on and the benefits they will accrue from releasing the information.
+We will then introduce a tool for generating synthetic data requirements of a) generating datasets in relational databases b) is scale-able \todo{I think we can say scalable} c) has a process which enables transparency and accountability and d) enables the data owners to specify what exactly information to release in accordance to the risks they want to take on and the benefits they will accrue from releasing the information.
 
 % Offer a brief history of the hospital's operations related to the challenges being addressed (anonymisation, k-means)
 % Review the existing literature or previous solutions that have been tried or proposed in similar contexts, highlighting gaps or shortcomings that your software addresses (PrivLava, relational tables)
@@ -76,7 +111,7 @@ Trusted Research Environments (TREs) are an important part of the data sharing m
 
 TREs play a major role in controlling the data access levels. To begin with, data access is controlled through secure authentication and authorisation mechanisms. This means that only approved researchers can access the data, and they can only access specific datasets approved for their role and research projects. Activities on TREs are closely monitored and logged.
 
-In addition, TREs provide both physical and virtual security. Data in TREs are often stored in physically protected facilities. Virtual securities measures such as firewalls, intrusion detection systems and regular penetration testing maximise protection against external threats.  Finally, to ensure no privacy leakage, data egress from TREs are restricted. Researchers can analyse data within TREs but cannot take it out.
+In addition, TREs provide both physical and virtual security. Data in TREs are often stored in physically protected facilities. Virtual securities \todo{security?} measures such as firewalls, intrusion detection systems and regular penetration testing maximise protection against external threats.  Finally, to ensure no privacy leakage, data egress from TREs are restricted. Researchers can analyse data within TREs but cannot take it out.
 
 This means that working with data within TREs is far from a comfortable experience. In order to provide security measures, computational resources can be limited and the list of approved software packages for analysis is restrictive and not easily updated. There is significant process overhead generated by the need for detailed authentication into remote machines, activity logging, monitoring and compliance checks. There is a steep learning curve in working within a TRE, new users are heavily dependent on support staff for technical assistance. Finally, the inability to egress data limits the sharing of interim findings and prevents close collaboration on ongoing data analysis. 
 
@@ -133,11 +168,13 @@ However, what engineers and researchers working on early stages of exploratory a
     \item \textbf{To generate synthetic data using statistical properties or marginals of real data.
     }
     
-    Hospitals are mandated or encouraged by various information acts to release hospital information to the public. The main reason for this is allowing insights into quality of care provided by public or insurance funds. Another reason is to enable patients to make informed decisions regarding where to seek care based on hospital performance and specialisations. 
+    Hospitals are mandated or encouraged by various information acts to release hospital information to the public. The main reasons for this is allowing insights into quality of care provided by public or insurance funds and to enable patients to make informed decisions regarding where to seek care based on hospital performance and specialisations\cite{Werner2005}. 
 
     The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistics on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise on individual patient privacy.  
 
     Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. Therefore, a synthetic hospital dataset that is generated using public statistical properties will not leak patient information any more than the release of those statistical properties has, already. 
+    
+    \todo{At least in HSBC, they didn't even want to publish column/table names. We might need to address why it's OK in healthcare}
 
     \item \textbf{To generate large synthetic relational datasets.
     }
@@ -155,7 +192,7 @@ However, what engineers and researchers working on early stages of exploratory a
     
     Synthetic data is complex, people may not understand how data that does not represent real individuals still needs privacy considerations. Differential privacy is both technical and abstract and there is a struggle to understand how it offers probabilistic but not absolute guarantees. Explaining this to custodians of highly sensitive data is difficult because privacy is expected but not always technically feasible.
     
-    The application of differential privacy to synthetic data compounds the explanations' complexities. However this is a important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differentially private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
+    The application of differential privacy to synthetic data compounds the explanations' complexities. However this is a important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differential-ly private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
 \end{enumerate}
 
 % Describe the methodology used in developing the software, including any frameworks, programming languages, or tools utilized (SSG, SQLAlchemy)
@@ -268,8 +305,9 @@ class usersGenerator:
 
 \subsubsection{Copy vocabulary tables}
 
-In this section, we demonstrate how to designate vocabulary tables so that they will be copied in their entirety, avoiding the need to generate synthetic values for them. We specify vocabulary tables in a \texttt{config.yaml}; the section below denotes table\texttt{countries} as a vocabulary table.
+In this section, we demonstrate how to designate vocabulary tables so that they will be copied in their entirety, avoiding the need to generate synthetic values for them. We specify vocabulary tables in a \texttt{config.yaml}; the listing \ref{lst:vocabulary-config.yam } below denotes `countries` as a vocabulary table.
 
+\begin{listing}
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -279,8 +317,11 @@ In this section, we demonstrate how to designate vocabulary tables so that they 
         countries:
             vocabulary_table: true
 \end{minted}
+\caption{A yaml section to demarcate table 'countries' as a vocabulary table}
+\label{lst:vocabulary-config.yam }
+\end{listing}
 
-All values in a vocabulary table are copied to an auto-generated \texttt{.yaml} file. In this snippet below, the vocabulary table \texttt{country} include a list of countries and their associated properties. 
+All values in a vocabulary table are copied to an auto-generated \texttt{.yaml} file. Listing [] shows a snippet of data from the `countries` table which has been copied to a auto-generated \texttt{countries.yaml} file.
 
 \begin{minted}[
     gobble=2,
@@ -356,7 +397,7 @@ All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referen
 
 Story generators are the most complex SSG configuration option. These address generating synthetic data with correlations that bridge different tables and multiple rows.
 
-An SSG story generator is a Python generator (an unfortunate clash of terminology: Python uses the term “generator” to refer to objects that yield multiple values in a sequence), written by the user, that yields sets of rows to be written into the synthetic database. For instance, it may first yield a row specifying a person in the users table, and then a set of multiple rows for the sessions table that specify various browsing sessions this user has had. This set of multiple rows can be related in any user-defined way eg. values increasing over time, according to a specific step change.
+An SSG story generator is a Python generator (an unfortunate clash of terminology: Python uses the term “generator” to refer to objects that yield multiple values in a sequence), written by the user, that yields sets of rows to be written into the synthetic database. For instance, it may first yield a row specifying a person in the users table, and then a set of multiple rows for the sessions table that specify various browsing sessions this user has had. This set of multiple rows can be related in any user-defined way eg. values increasing over time.
 
 % \subsection{Software Design and Development}
 
@@ -375,24 +416,7 @@ An SSG story generator is a Python generator (an unfortunate clash of terminolog
 Summarise the key points made throughout the paper, reiterating the software's role in addressing the hospital's challenges.
 Reflect on the broader contributions of work to the field of healthcare IT.
 
-% References
-\begin{thebibliography}{}
-    \bibitem{repository}
-    C Gavidia-Calderon, M Hauru, I Stenson, M Yong, "sqlsynthgen" 2024. [Online]. Available: \url{https://github.com/alan-turing-institute/sqlsynthgen}.
-    \bibitem{omop}
-    Observational Medical Outcomes Partnership (OMOP), "OMOP Common Data Model" 2024. [Online]. Available: \url{https://www.ohdsi.org/data-standardization/the-common-data-model/}.
-    \bibitem{airbnb}
-    Airbnb New User Bookings, "Airbnb New User Bookings" Kaggle, Year. [Online]. Available: \url{https://www.kaggle.com/competitions/airbnb-recruiting-new-user-bookings}. [Accessed: November, 25, 2015].
-    \bibitem{sqlalchemy}
-    M. Bayer, ``SQLAlchemy,'' [Online]. Available: \url{https://www.sqlalchemy.org/}
-\label{lst:.env file}
+\bibliographystyle{plain}
+\bibliography{references}
 
-
-
-\end{thebibliography}
-
-\end{document}
-
-
-\end{thebibliography}
 \end{document}
