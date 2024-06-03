@@ -48,6 +48,25 @@ it to a third party.
 While these techniques provide an extra layer of privacy protection, they are not exempt from vulnerabilities~\cite{near2021}.
 For example, de-identification does remove identifying information from a dataset, but data releases are still susceptible to linkage attacks.
 Aggregations requires releasing only aggregate population metrics, like counts or averages, but this still leaves outliers vulnerable to identification~\cite{tucker2020}.
+Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release data of \emph{synthetic} patients.
+\emph{Synthetic data generators (SDG)} use algorithms to produce synthetic data entries while preserving statistical properties of the real dataset.
+By incorporating techniques like \emph{differential privacy}, SDGs can offer mathematical guarantees of the preservation of user privacy~\cite{Kopp2021MicrosoftSD}.
+
+In this paper, we describe our work on using SDGs at the University College London Hospitals NHS Foundation Trust (UCLH).
+Each year, UCLH hospitals admits 100,000 patients and stores their data in a relational database.
+They have these requirements regarding SDG utilisation:
+
+\begin{enumerate}
+  \item Patient privacy \emph{must} be preserved.
+  \item The SDG process should be transparent and explainable.
+  \item The SDG tool should preserve the structure of the relational database.
+  \item SDG users should be capable of tailoring the fidelity of the synthetic data.
+\end{enumerate}
+
+We developed \textsc{SqlSynthGen} (SSG) to deliver this functionality~\cite{repository}.
+SSG is an open-source Python package that can automatically replicate the database schema of a target database.
+Once the replica is in place, SSG can generate synthetic samples at different levels of fidelity: from random values compliant with the database schema, to samples from probability distributions learned from real data.
+Instead of using a black-box approach to SDG ---like deep generative models with thousands of parameters~\cite{}---
 
 % Provide an overview of the challenges or problems the hospital was facing that prompted the need for a new software solution.
 % Introduce the software as a solution to these challenges.
@@ -161,6 +180,7 @@ Machine learning (ML) infrastructure are deployed in hospitals to enable AI in h
 To achieve these tasks, engineers who build the infrastructure need to gain an understanding of the data structures and data flow within the hospital. Researchers need to evaluate if target datasets meet their purposes for hypothesis testing, and is adequate in terms of quality and quantity. It is onerous to issue contracts to entire teams of engineers, researchers and students, but there are no other ways to share data with external collaborators. 
 
 However, what engineers and researchers working on early stages of exploratory analysis need to gain an understanding of the data in terms of content, structure and data flow is information \textbf{about} the data, not access to individual rows of data itself. This provides us the opportunity to frame the problem as: What information can be released about sensitive data, which is maximally beneficial to engineers and researchers with minimal cost to patient privacy?
+
 
 \subsection{Challenges}
 
@@ -305,9 +325,11 @@ class usersGenerator:
 
 \subsubsection{Copy vocabulary tables}
 
-In this section, we demonstrate how to designate vocabulary tables so that they will be copied in their entirety, avoiding the need to generate synthetic values for them. We specify vocabulary tables in a \texttt{config.yaml}; the listing \ref{lst:vocabulary-config.yam } below denotes `countries` as a vocabulary table.
+In relational synthetic datasets, vocabularies do not need to be synthesised. On their own, vocabularies provide only limited utility, as the more interesting aspects of the data are usually found in the non-vocabulary tables. However, improving the fidelity of the overall dataset can be achieved by ensuring the vocabulary tables have perfect fidelity from the beginning, as they typically do not raise privacy concerns. In this section, we will show how to manage vocabulary tables by copying them in their entirety, thereby eliminating the need for synthesis.
 
-\begin{listing}
+First we specify vocabulary tables in a \texttt{config.yaml}; the listing \ref{lst:vocabulary-config.yaml } below denotes `countries` as a vocabulary table. All values in denoted vocabulary tables are copied to an auto-generated \texttt{.yaml} file. Listing \ref{lst:countries.yaml} shows a snippet of data from the `countries` table which has been copied to a auto-generated \texttt{countries.yaml} file.
+
+\begin{listing}[H]
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -318,11 +340,10 @@ In this section, we demonstrate how to designate vocabulary tables so that they 
             vocabulary_table: true
 \end{minted}
 \caption{A yaml section to demarcate table 'countries' as a vocabulary table}
-\label{lst:vocabulary-config.yam }
+\label{lst:vocabulary-config.yaml }
 \end{listing}
 
-All values in a vocabulary table are copied to an auto-generated \texttt{.yaml} file. Listing [] shows a snippet of data from the `countries` table which has been copied to a auto-generated \texttt{countries.yaml} file.
-
+\begin{listing}[H]
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -338,8 +359,13 @@ All values in a vocabulary table are copied to an auto-generated \texttt{.yaml} 
       distance_km: 2828.1333
         :
 \end{minted}
+\caption{Example of data rows copied from `countries` vocabulary table}
+\label{lst:countries.yaml}
+\end{listing}
 
-This design choice enables users to verify each value extracted from the real dataset, maximising transparency and enabling audit.
+The primary reason for copying vocabularies this way is to maximise transparency for auditing purposes. Data holders can audit each value extracted from the real dataset, before creating any synthetic data. Note that we have to be careful in making sure that the tables marked as vocabulary tables truly do not hold privacy sensitive data, otherwise catastrophic privacy leaks are possible, where the original data is exposed raw and in full. 
+
+The downside of this approach is clear when scaling up to address vocabulary tables which are very large. Therefore our generator pipeline is modular to ensure that vocabularies need only be copied once when creating more rows to add into a synthetic dataset. 
 
 \subsubsection{Incorporate aggregate statistics}
 
