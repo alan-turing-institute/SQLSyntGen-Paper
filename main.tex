@@ -19,19 +19,17 @@ $^2$University College London
 \date{\today} % Or specify a specific date
 \maketitle
 \begin{abstract}
-There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce a human-readable, risk guided approach to generating synthetic data in \todo{from?} relational databases, to meet varying requirements in terms of data fidelity, utility and appetite for disclosure risk \todo{I think risk-disclosure sounds better} .
+There is a growing appetite to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce a human-readable, risk guided approach to generating synthetic relational datasets to meet varying requirements in terms of data fidelity, utility and appetite for risk-disclosure risk.
 \end{abstract}
 
 \section{Introduction*}
 
 Hospitals currently manage and produce large quantities of historical
-patient data.
-While medical staff access this data frequently for their daily duties,
-other professional communities ---scientists, software engineers, or educators--- need to follow lengthy processes to be granted
-access.
-This process usually involves background checks, contract signing, and 
+patient data, stored in relational databases. While medical staff access this data frequently for their daily duties,
+other professional communities ---scientists, software engineers, or educators--- need to follow lengthy processes to be granted access.
+This process involves background checks, contract signing, and 
 accessing data only via a highly-restricted computing environment~\cite{harris2022}.
-Patient data is highly sensitive~\cite{schomerus2022}, so controls are in place to ensure patient privacy.
+Patient data is highly sensitive~\cite{schomerus2022}, so these controls are in place to ensure patient privacy.
 
 While protecting patient privacy is of utmost importance, limiting access to 
 patient data hinders its potential.
@@ -45,46 +43,50 @@ And, if shared with academic institutions, patient data can be used to train the
 
 In order to both protect user privacy \emph{and} maximise access, we can use techniques like de-identification and aggregation over the original data before handling 
 it to a third party.
-While these techniques provide an extra layer of privacy protection, they are not exempt from vulnerabilities~\cite{near2021}.
+While these techniques provide an extra layer of protection, they are not exempt from vulnerabilities~\cite{near2021}.
 For example, de-identification does remove identifying information from a dataset, but data releases are still susceptible to linkage attacks.
 Aggregations requires releasing only aggregate population metrics, like counts or averages, but this still leaves outliers vulnerable to identification~\cite{tucker2020}.
 Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release data of \emph{synthetic} patients.
 \emph{Synthetic data generators (SDG)} use algorithms to produce synthetic data entries while preserving statistical properties of the real dataset.
 By incorporating techniques like \emph{differential privacy}, SDGs can offer mathematical guarantees of the preservation of user privacy~\cite{Kopp2021MicrosoftSD}.
 
-In this paper, we describe our work on using SDGs at the University College London Hospitals NHS Foundation Trust (UCLH).
+In this paper, we describe our work on using SDG at the University College London Hospitals NHS Foundation Trust (UCLH).
 Each year, UCLH hospitals admits 100,000 patients and stores their data in a relational database.
-They have these requirements regarding SDG utilisation:
+Broadly, these are the requirements regarding their SDG utilisation:
 
-\begin{enumerate}
-  \item Patient privacy \emph{must} be preserved.
-  \item The SDG process should be transparent and explainable.
-  \item The SDG tool should preserve the structure of the relational database.
-  \item SDG users should be capable of tailoring the fidelity of the synthetic data.
-\end{enumerate}
+\begin{itemize}
+  \item \textbf{REQ-1:} Patient privacy \emph{must} be protected.
+  \item \textbf{REQ-2:} The SDG process should be transparent and explainable.
+  \item \textbf{REQ-3:} The SDG tool should preserve the structure of the relational database.
+  \item \textbf{REQ-4:} SDG users should be capable of tailoring the fidelity of the synthetic data.
+\end{itemize}
 
-We developed \textsc{SqlSynthGen} (SSG) to deliver this functionality~\cite{repository}.
-SSG is an open-source Python package that can automatically replicate the database schema of a target database.
-Once the replica is in place, SSG can generate synthetic samples at different levels of fidelity: from random values compliant with the database schema, to samples from probability distributions learned from real data.
-Instead of using a black-box approach to SDG ---like deep generative models with thousands of parameters~\cite{}---
+We developed \textsc{SqlSynthGen} to deliver this functionality~\cite{repository}.
+\textsc{SqlSynthGen} is an open-source Python package that can automatically replicate the database schema of a target database.
+Once the replica is in place, \textsc{SqlSynthGen} can generate synthetic samples at different levels of fidelity: from low-fidelity random values compliant with the database schema, to high-fidelity samples from probability distributions learned from real data.
+Instead of using a black-box approach to SDG ---like deep generative models with thousands of parameters~\cite{DBLP:journals/pami/Bond-TaylorLLW22}--- \textsc{SqlSynthGen} uses a white-box approach, where the metrics used for SDG are expressed as SQL queries in plain text.
+For ensuring patient privacy, \textsc{SqlSynthGen} supports adding noise to these metrics using differential privacy.
+
+This paper is organised as follows ...
 
 % Provide an overview of the challenges or problems the hospital was facing that prompted the need for a new software solution.
 % Introduce the software as a solution to these challenges.
 % State the objectives of the paper, including what the reader can expect to learn.
-\section{Introduction}
+\section{Background}
 
-Current mechanisms for addressing data sharing problems are necessarily \todo{I would soften the claim to ``can be'', and probably add a citation} a) time-consuming, b) linked to inadequate privacy measures protection, c) cause unnecessary friction to analysis, d) cannot be scaled to large datasets and/or e) cannot be applied to data in relational databases, a format in which many large datasets are stored.
 
 % Therefore tools like anonymisation, pseudonymisation, trusted research environments and synthetic data generators each can provide a degree of success in enabling access to data without the contracts. However, each of these tools are limited in their own ways.
 
-In this paper we will begin by enumerating different motivations for sharing hospital data. An understanding of motivations important because the requirements of appropriate data sharing mechanisms depend this \todo{depend on this?}. Why we want to share data decides what data needs to be shared, and this in turn enumerates the requirements to be met if the data can convincingly be shared safely. 
+We will begin by enumerating different motivations for sharing hospital data. An understanding of motivations important because the requirements of appropriate data sharing mechanisms depend on this. Why we want to share data decides what data needs to be shared, and this in turn defines the requirements to be met if the data can convincingly be shared safely.
 
-We will then introduce a tool for generating synthetic data requirements of a) generating datasets in relational databases b) is scale-able \todo{I think we can say scalable} c) has a process which enables transparency and accountability and d) enables the data owners to specify what exactly information to release in accordance to the risks they want to take on and the benefits they will accrue from releasing the information.
+Current mechanisms for addressing data sharing problems are necessarily \todo{I would soften the claim to ``can be'', and probably add a citation} a) time-consuming, b) linked to inadequate privacy measures protection, c) cause unnecessary friction to analysis, d) cannot be scaled to large datasets and/or e) cannot be applied to data in relational databases, a format in which many large datasets are stored.
+
+
+% We will then introduce a tool for generating synthetic data requirements of a) generating datasets in relational databases b) is scale-able \todo{I think we can say scalable} c) has a process which enables transparency and accountability and d) enables the data owners to specify what exactly information to release in accordance to the risks they want to take on and the benefits they will accrue from releasing the information.
 
 % Offer a brief history of the hospital's operations related to the challenges being addressed (anonymisation, k-means)
 % Review the existing literature or previous solutions that have been tried or proposed in similar contexts, highlighting gaps or shortcomings that your software addresses (PrivLava, relational tables)
 % Requirements for transparency and auditability here??
-\section{Background}
 
 \subsection{Motivations for Data Sharing}
 
@@ -192,7 +194,7 @@ However, what engineers and researchers working on early stages of exploratory a
 
     The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistics on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise on individual patient privacy.  
 
-    Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. Therefore, a synthetic hospital dataset that is generated using public statistical properties will not leak patient information any more than the release of those statistical properties has, already. 
+    Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. Therefore, a synthetic dataset that is generated using public statistical properties will not leak patient information any more than the release of hospital statistical properties has, already. 
     
     \todo{At least in HSBC, they didn't even want to publish column/table names. We might need to address why it's OK in healthcare}
 
@@ -212,7 +214,7 @@ However, what engineers and researchers working on early stages of exploratory a
     
     Synthetic data is complex, people may not understand how data that does not represent real individuals still needs privacy considerations. Differential privacy is both technical and abstract and there is a struggle to understand how it offers probabilistic but not absolute guarantees. Explaining this to custodians of highly sensitive data is difficult because privacy is expected but not always technically feasible.
     
-    The application of differential privacy to synthetic data compounds the explanations' complexities. However this is a important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differential-ly private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
+    The application of differential privacy to synthetic data compounds the explanations' complexities. However this is a important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differentially private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
 \end{enumerate}
 
 % Describe the methodology used in developing the software, including any frameworks, programming languages, or tools utilized (SSG, SQLAlchemy)
@@ -255,39 +257,36 @@ The next section demonstrates the use of SSG in creating synthetic data based a 
 
 \subsubsection{Set up default configuration}
 
-For reference in this example, let us consider that our AirBnb dataset is contained in an `airbnb` database in a local PostgreSQL instance. We want to port the schema to a new `airbnb\_synthetic` database, and populate the `airbnb\_synthetic` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
+For reference in this example, let us consider that our dataset is contained in an `airbnb` database in a local PostgreSQL instance. We want to port the schema to a new `airbnb\_synthetic` database, and populate the `airbnb\_synthetic` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
 
-First, we need to provide SSG with the connection parameters to the real dataset, using a \texttt{.env} file in listing \ref{lst:.env}.
+First, we need to provide SSG with the connection credentials to the real dataset by setting environment variables as in listing \ref{lst:environment variables}.
 
 \begin{listing}[H]
 \begin{minted}[
-    gobble=2,
+    gobble=0,
     frame=single,
-    % linenos
-  ]{yaml}
-    SRC_HOST_NAME=localhost 
-    SRC_USER_NAME=postgres 
-    SRC_PASSWORD=password
-    SRC_DB_NAME=airbnb 
-    DST_HOST_NAME=localhost 
-    :
-    DST_DB_NAME=airbnb_synthetic
+    linenos
+  ]{bash}
+export SRC_DSN="postgresql://auser:apassword@aserver.adomain.com"
+export SRC_SCHEMA='airbnb'
+export DST_DSN="postgresql://auser:apassword@aserver.adomain.com/dst_db"
+export DST_SCHEMA='airbnb_synthetic'
 \end{minted}
-\caption{Example configuration for .env file"}
-\label{lst:.env}
+\caption{Example configuration environment variables"}
+\label{lst:environment variables}
 \end{listing}
 
 We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables} and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
 
-The first file, \texttt{orm.py}, delineates the structure of the Postgres `airbnb` dataset by mapping each table in 'airbnb' to a Python class, with table columns represented as class variables. This mapping is generated using SQLAlchemy\cite{sqlalchemy}, which is a SQL toolkit and Object-Relational Mapping (ORM) library for Python. The use of SQLAlchemy in SSG means that no further user configuration is required to describe the schema of the original dataset. 
+The first file, `orm.py`, describes the structure of the PostgreSQL `airbnb` dataset by mapping each table in 'airbnb' to a Python class, with table columns represented as class variables. This mapping is generated using SQLAlchemy\cite{sqlalchemy}, which is a SQL toolkit and Object-Relational Mapping (ORM) library for Python. The use of SQLAlchemy in SSG means that no further user configuration is required to describe the schema of the original dataset. 
 
-The \texttt{orm.py} file is then used as basis to make a new `airbnb\_synthetic` Postgres database with the necessary tables, columns, and data types. Listing \ref{lst:orm.py} shows a snippet from \texttt{orm.py} which illustrates the representation of the \texttt{users} table from the `airbnb`  dataset as a Python class.
+The `orm.py` file is then used as basis to make a new `airbnb\_synthetic` PostgreSQL database with the necessary tables, columns, and data types. Listing \ref{lst:orm.py} shows a snippet from `orm.py` which demonstrates the mapping of the `users` table from the `airbnb`  dataset as a Python class.
 
 \begin{listing}[H]
 \begin{minted}[
     % gobble=2,
     frame=single,
-    % linenos
+    linenos
   ]{Python}
 class User(Base):
     __tablename__ = "users"
@@ -296,11 +295,11 @@ class User(Base):
     date_account_created = Column(Date)
     ...
 \end{minted}
-\caption{Postgres table `User` represented as a Python class}
+\caption{Section of PostgreSQL table `user` represented as a Python class}
 \label{lst:orm.py}
 \end{listing}
 
-The second file, \texttt{ssg.py}, contains auto-generated Python code for populating each table column. This code generates default synthetic values that match the data types defined by the database schema but are not related to the actual data. The provision of human-readable code enables transparency about how each table column is populated. It can be used as a template that users can edit to incorporate different generation methods as needed.
+The second file, \texttt{ssg.py}, contains auto-generated Python code for populating each table column. This code generates default synthetic values that match the data types defined by the database schema but are not in any way related to the actual data. The provision of human-readable Python code describes to the user how each table column is populated by default. This code can be used as a template that users can edit to incorporate different generation methods as needed.
 
 Listing \ref{lst:ssg.py} demonstrates the auto-generated Python code for generating `id` and `date\_account\_created` values for the `User` table. `id` is assigned generic, password-like values, and `date\_account\_created` is assigned a random date value. We execute \mintinline{bash}{sqlsynthgen create-data} to populate `airbnb\_synthetic` with values generated by \texttt{ssg.py}.
 
@@ -369,10 +368,13 @@ The downside of this approach is clear when scaling up to address vocabulary tab
 
 \subsubsection{Incorporate aggregate statistics}
 
-This section shows how we incorporate aggregate statistics of real data in order to generate synthetic data that retains those statistical properties.
+As explained above, the default behaviour of SSG is to generate syntactically correct values. This section shows how we incorporate aggregate statistics from real data in order to generate synthetic data that retains those statistical properties. 
 
-For example, we would like to generate normally distributed synthetic values for the users.age column, with reference to the mean and standard deviation values of the real data. SSG connects to the database and discovers requisite statistical values by running user-defined SQL statements in the \texttt{age\_stats} section of a \texttt{config.yaml} file.
+This section shows an example to generate normally distributed synthetic values to populate a `users.age` column, with reference to the mean and standard deviation values of the real data. The user begins by defining SQL statements in the `age\_stats` section of a `config.yaml` file. This is demonstrated in listing \ref{lst:define sql and row generator in config.yaml}. 
 
+SSG uses the credentials stored in the .env file to authenticate to the database. This authentication allows SSG to execute SQL statements needed to compute the required statistical values. Computed values are recorded in an auto-generated \texttt{src-stats.yaml} file, demonstrated in listing \ref{lst:age_stats src-stats.yaml}. 
+
+\begin{listing}[H]
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -392,9 +394,11 @@ For example, we would like to generate normally distributed synthetic values for
                   query_results: SRC_STATS["age_stats"]
                 columns_assigned: age
 \end{minted}
+\caption{A SQL statement to compute mean and average of column `users.age` }
+\label{lst:define sql and row generator in config.yaml}
+\end{listing}
 
-Results from running these SQL statements are recorded in an auto-generated \texttt{src-stats.yaml} file. This SSG design choice enables users to access a human-readable record of what has been extracted from the real data.
-
+\begin{listing}[H]
 \begin{minted}[
     gobble=2,
     frame=single,
@@ -404,9 +408,13 @@ Results from running these SQL statements are recorded in an auto-generated \tex
     - mean: 36.54434029695572
       std_dev: 11.708339792587486
 \end{minted}
+\caption{Example of mean and standard deviation values computed from `users.age` column}
+\label{lst:age_stats src-stats.yaml}
+\end{listing}
 
-All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referenced by the Python data generators to return a distribution of values that meet those mean and standard deviation values.
+All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referenced by the Python data generators. Listing \ref{lst:provider-function} shows the Python provider function that generates a distribution of values to meet the statistical properties computed and recorded in `config.yaml` and `src-stats.yaml`.
 
+\begin{listing}[H]
 \begin{minted}[
     gobble=0,
     frame=single,
@@ -414,10 +422,66 @@ All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referen
   ]{Python}
     import random
     def user_age_provider(query_results):
-    mean: float = query_results[0]["mean"]
-    std_dev: float = query_results[0]["std_dev"]
-    return random.gauss(mean, std_dev)
+        mean: float = query_results[0]["mean"]
+        std_dev: float = query_results[0]["std_dev"]
+        return random.gauss(mean, std_dev)
+\end{minted} 
+\caption{A provider function }
+\label{lst:provider-function}
+\end{listing}
+
+The primary reason for extracting information using SQL statements and documenting it in config.yaml is to maximise transparency for auditing purposes. Similar to vocabularies, users can audit information that is disclosed about real data by reviewing the human-readable `config.yaml` and `src-stats.yaml` files. Multiple properties, such as marginals, percentiles, and skewness, can be used simultaneously to enhance the fidelity of synthetic data. These computations can be resource-intensive with large datasets. To address this, the SSG generator process is modularized: properties are computed and stored once, allowing subsequent generators to reliably reference these values, provided the real dataset has not significantly changed.
+
+\subsubsection{Differentially Private Synthetic Data*}
+
+\emph{Differential privacy} is arguably the most popular technique for providing privacy guarantees on SDGs.
+Let us imagine two datasets:
+
+\begin{itemize}
+    \item A dataset $B$ \emph{with} information of person $X$.
+    \item A dataset $A$ \emph{without} information of person $X$.
+\end{itemize}
+
+If both datasets were generated using a differentially-private \emph{mechanism}, performing a query on dataset $A$ should provide the same, or almost the same, result as performing the same query on dataset $B$~\cite{Kopp2021MicrosoftSD}.
+Differentially private mechanisms hide the presence or absence of person $X$ ---or any individual--- in the dataset, which implies the protection of the contents of the data~\cite{near2021}.
+To accomplish this, these mechanisms inject random noise to the data.
+The amount of noise is a function of the privacy parameter epsilon $\varepsilon$, that needs to
+carefully tuned to provide privacy guarantees.
+
+Generating synthetic data in a differentially private way usually requires 3 steps: 1) \emph{select}, or choose, some queries over the original data, 2) \emph{measure}, or execute, those queries using a differentially private mechanism, and 3) \emph{generate} synthetic data using these measurements~\cite{DBLP:journals/pvldb/McKennaMSM22}.
+\textsc{SqlSynthGen} enables the \emph{select} and \emph{measure} steps by supporting differentially private SQL queries in `src-stats.yaml`  (Listing \ref{lst:dp-queries}).
+
+\begin{listing}[H]
+\begin{minted}[
+    gobble=2,
+    frame=single,
+    % linenos
+  ]{yaml}
+    src-stats:
+      - name: age_stats
+        dp-query: >
+          SELECT AVG(age) AS mean, STDDEV(age) AS std_dev
+          FROM query_result
+        epsilon: 0.5
+        delta: 0.000001
+        snsql-metadata:
+          max_ids: 1
+          id:
+            type: string
+            private_id: true
+          age:
+            type: float
+            lower: 0
+            upper: 100
 \end{minted}
+\caption{A differentially-private SQL query. }
+\label{lst:dp-queries}
+\end{listing}
+
+Internally, \textsc{SqlSynthGen} uses \textsc{SmartNoise SQL}\footnote{\url{https://docs.smartnoise.org/sql/index.html}.} to execute differentially private queries.
+As seen in Listing \ref{lst:dp-queries}, \textsc{SmartNoise SQL} needs additional information besides the SQL query for applying a differentially private mechanism, including the privacy parameter epsilon $\varepsilon$.
+Regarding the final \emph{generate} step, the query results are made available to provider functions ---like the one in Listing \ref{lst:provider-function}--- so \textsc{SqlSynthGen} users can use these measures for data generation. 
+
 
 \subsubsection{Build multivariate relationships across tables}
 
