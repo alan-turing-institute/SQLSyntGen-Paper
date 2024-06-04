@@ -34,7 +34,7 @@ For instance, researchers can use data to improve diagnostic accuracy, refine ou
 
 In order to both protect user privacy \emph{and} control access, current techniques are used, which include mechanisms like de-identification, aggregation over the original data, and storing them in trusted research environments (TRE) for access by third parties. While these techniques provide an extra layer of protection, they are not exempt from vulnerabilities~\cite{near2021}. For example, de-identified data releases are still susceptible to linkage attacks. Aggregations requires releasing only aggregate population metrics, like counts or averages, but this still leaves outliers vulnerable to identification~\cite{tucker2020}. 
 
-Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release data of \emph{synthetic} patients. \emph{Synthetic data generators (SDG)} use algorithms to produce synthetic data entries while preserving statistical properties of the real dataset. By incorporating differential privacy, SDGs can offer mathematical guarantees of the preservation of user privacy~\cite{Kopp2021MicrosoftSD}.
+Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release \emph{synthetic} patient data. Synthetic data is data that is manufactured, as opposed to real data that is collected from real-life events and people. \emph{Synthetic data generators (SDG)} use algorithms to produce synthetic data entries while preserving statistical properties of the real dataset. SDGs can offer mathematical guarantees of the preservation of user privacy~\cite{Kopp2021MicrosoftSD} by incorporating differential privacy.
 
 In this paper, we describe our work on using SDG at the University College London Hospitals (UCLH) NHS Foundation Trust.
 Each year, UCLH admits 100,000 patients and stores their data in a relational database. Broadly, we discover that these are the requirements regarding their SDG utilisation:
@@ -46,7 +46,7 @@ Each year, UCLH admits 100,000 patients and stores their data in a relational da
   \item \textbf{REQ-4:} SDG users should be able to adjust fidelity of synthetic datasets to ensure minimal information is disclosed for each analysis conducted.
 \end{itemize}
 
-We developed \textsc{SqlSynthGen} with the functionality~\cite{repository} to meet these requirements.
+We developed \textsc{SqlSynthGen}~\cite{repository} with the functionality to meet these requirements.
 \textsc{SqlSynthGen} is an open-source Python package that can automatically replicate the database schema of a target database.
 Once the replica is in place, \textsc{SqlSynthGen} can generate synthetic samples at different levels of fidelity: from low-fidelity random values compliant with the database schema, to high-fidelity samples from probability distributions learned from real data.
 Instead of using a black-box approach to SDG ---like deep generative models with thousands of parameters~\cite{DBLP:journals/pami/Bond-TaylorLLW22}--- \textsc{SqlSynthGen} uses a white-box approach, where the metrics used for SDG are expressed as SQL queries in human readable format.
@@ -56,28 +56,28 @@ For ensuring patient privacy, \textsc{SqlSynthGen} supports differential privacy
 
 This section starts by enumerating motivations for sharing patient data. An understanding of motivations important because the requirements of appropriate data sharing mechanisms depend on this. Why we want to share data decides what data needs to be shared, and this in turn defines the requirements to be met if the data can convincingly be shared safely.
 
-We then survey the current privacy preservation mechanisms ecosystem that are available to address the requirements. the Hospitals enables external collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing mechanisms. The aim of these mechanisms are to protect patient privacy while facilitating research and collaboration. We show that current mechanisms for addressing data sharing problems are can be a) time-consuming, b) linked to inadequate privacy measures protection, c) cause unnecessary friction to analysis, d) cannot be scaled to large datasets and/or e) cannot be applied to data in relational databases, a format in which many large datasets are stored.
+We then survey the current privacy preservation mechanisms ecosystem that are available to address the requirements. Hospital Trusts enable external collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing mechanisms. The aim of these mechanisms are to protect patient privacy while facilitating research and collaboration. We show that current mechanisms for addressing data sharing problems are can be a) time-consuming, b) linked to inadequate privacy measures protection~\cite{near2021}\cite{tucker2020}, c) cause unnecessary friction to analysis\cite{ODonovan2023}, d) cannot be scaled to large relational datasets, a format in which many patient datasets are stored or e) achieve high fidelity at the cost of limited scalability\cite{Cai2023}.
 
 \subsection{On the Benefits of Sharing Patient Data}
 
 \paragraph{Enhancing Research Quality and Innovation:} 
-Collaboration can lead to more comprehensive research studies, allowing healthcare practitioners and researchers to test hypotheses or observe trends across a broader dataset than what's available internally. This enhances the reproducibility and significance of research findings.
+Collaboration can lead to more comprehensive research studies, allowing healthcare practitioners and researchers to test hypotheses or observe trends across a broader dataset than what's available internally. How well a dataset represents the true distribution affects analysis matters more than simply dataset size\cite{app11020796}. In the medical domain where lack of data is a common occurrence, the amalgamation of multiple datasets has a better chance of representing true distribution. This enhances the reproducibility and robustness of research findings.
 
 \paragraph{Access to Specialised Expertise:} 
-External collaborators bring specialised knowledge and skills that complement the in-house capabilities of a hospital. For example, collaborations with methodology researchers can lead to state-of-the-art data analysis and interpretation, thereby improving both tool development and research outcomes. Software engineers and machine learning operations (ML Ops) engineers can build customised cyber-physical infrastructure to support analysis of patient data in real time within the hospital.
+External collaborators bring specialised knowledge and skills that complement the in-house capabilities of a hospital. For example, collaborations with methodology researchers can lead to state-of-the-art data analysis and interpretation, thereby improving both tool development and research outcomes. Software engineers and machine learning operations (ML Ops) engineers can build customised cyber-physical infrastructure to support analysis of patient data in real time within the hospital\cite{harris2022}.
 
 \paragraph{Accelerating Medical Discoveries:}
-By pooling resources and data between hospitals, research can proceed at a faster pace, potentially leading to quicker discoveries in disease mechanisms, treatment effectiveness, and development of new therapies or medical technologies. Sharing patient data can facilitate the recruitment of participants for clinical trials, ensuring a diverse and adequate sample size. This can be crucial in studying rare diseases or sub-types of common diseases, especially in hospitals that offer specialisations not commonly offered elsewhere in the world. 
+By pooling resources and data between hospitals, research can proceed at a faster pace\cite{app11020796}, potentially leading to quicker discoveries in disease mechanisms, treatment effectiveness, and development of new therapies or medical technologies. Sharing patient data can facilitate the recruitment of participants for clinical trials, ensuring a diverse and adequate sample size. This can be crucial in studying rare diseases or sub-types of common diseases, especially in hospitals that offer specialisations not commonly offered elsewhere in the world. 
 
-\paragraph{Expanding Research Funding Opportunities:} Collaborative research often has better chances of securing funding. Funding bodies frequently encourage or require collaboration across institutions as a criterion for grants, viewing it as a way to maximise the impact of their investment.
+\paragraph{Expanding Research Funding Opportunities:} Collaborative research often has better chances of securing funding\cite{Vasan2021}. Funding bodies frequently encourage or require collaboration across institutions as a criterion for grants, viewing it as a way to maximise the impact of their investment.
 
-\paragraph{Bench-marking and Quality Improvement:} Comparing data across institutions can help identify best practices and areas for improvement in patient care and management. This bench-marking can drive quality improvement initiatives within a hospital.
+\paragraph{Bench-marking and Quality Improvement:} Comparing data across institutions can help identify best practices and areas for improvement in patient care and management. This bench-marking is used to drive quality improvement initiatives within a hospital\cite{Werner2005}.
 
 \paragraph{Education and Training} Collaborations provide educational opportunities to clinical research employees at hospitals, researchers and students at universities and research institutions, exposing them to different perspectives, methodologies, and cutting-edge research through joint ventures and knowledge exchanges.
 
-\paragraph{Building Networks and Reputation:} Collaborations can enhance a hospital’s reputation in the medical and scientific community. They extend the hospital’s influence and recognition, which can attract top talent and more collaborations in the future.
+\paragraph{Building Networks and Reputation:} Collaborations can enhance a hospital’s reputation in the medical and scientific community\cite{Vasan2021}. They extend the hospital’s influence and recognition, which can attract top talent and more collaborations in the future.
 
-\subsection{Current Mechanisms to support Sharing Patient Data}
+\subsection{Current Mechanisms For Sharing Patient Data}
 
 \paragraph{Honorary contracts for visiting researchers:}
 
