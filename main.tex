@@ -42,15 +42,19 @@ SDGs can offer mathematical guarantees of the preservation of user privacy~\cite
 \todo{Markus: I wonder if the "Instead of releasing" sentence should start a new paragraph, since it introduces the key thing that we are doing.}
 
 In this paper, we describe our work on using SDG at the University College London Hospitals (UCLH) NHS Foundation Trust.
-Each year, UCLH admits 100,000 patients and stores their data in a relational database. Broadly, we discover that these are the requirements regarding their SDG utilisation:
+Each year, UCLH admits 100,000 patients and stores their data in a relational database. Broadly, we discover that these are the challenges regarding their SDG utilisation:
 
+\begin{listing}
 \begin{itemize}
-  \item \textbf{REQ-1:} The synthetic generation process should be transparent and explainable for audit.
-  \item \textbf{REQ-2:} The synthetic generator tool should produce relational datasets for any given schema
-  \item \textbf{REQ-3:} \todo{There is Carsten feedback to please fix this} Users should be able to adjust fidelity of synthetic datasets to ensure minimal information is disclosed for each analysis conducted.
+    \item \textbf{Challenge-1:} The synthetic datasets should be in the form of relational datasets for any given relational schema
+    \item \textbf{Challenge-2:} The generator should utilise statistical properties computed from real patients to manufacture these synthetic data
+    \item \textbf{Challenge-3:} The names, values and how these properties were computed should be human-readable for audit. 
 \end{itemize}
+\caption{Challenges for Generating Synthetic Data for UCLH Trust}
+\label{lst:UCLH Requirements}
+\end{listing}
 
-We developed \textsc{SqlSynthGen}~\cite{repository} to meet these requirements over \emph{relational datasets}, with multiple tables and foreign keys between them~\cite{Cai2023}.
+We developed \textsc{SqlSynthGen}~\cite{repository} to meet these challenges\ref{lst:UCLH Requirements} over \emph{relational datasets}, with multiple tables and foreign keys between them~\cite{Cai2023}.
 \textsc{SqlSynthGen} is an open-source Python package that can automatically replicate the database schema of a target database.
 Once the replica is in place, \textsc{SqlSynthGen} can generate synthetic samples at different levels of fidelity: from low-fidelity random values compliant with the database schema, to high-fidelity samples from probability distributions learned from real data.
 Instead of using a black-box approach to SDG ---like deep generative models with thousands of parameters~\cite{DBLP:journals/pami/Bond-TaylorLLW22}--- \textsc{SqlSynthGen} uses a white-box approach, where the metrics used for SDG are expressed as SQL queries in human-readable format.
@@ -123,9 +127,7 @@ Synthetic data generators (SDG) manufacture data. There is a tension observed in
 
 However, low-fidelity or coarse-grained datasets can be useful, as utility is depending on the context or task. In some cases, low-fidelity datasets are valuable if they provide sufficient information for engineering applications eg. software testing. When paired with real data, multi-fidelity datasets can  reduce computational costs and prevent over-fitting in machine learning tasks \cite{Patra2020}\cite{Santoni2024}\cite{berkson2019}. Low fidelity datasets can remove blockers at the beginning of research for initial exploration, building pipelines, and testing models. These tasks can be conducted in a secure environment restricted to students and researchers, with scripts later ported to the hospital for training on real data if the initial analysis proves promising.
 
-\todo{Markus: I don’t think we’ve discussed the distinction between fidelity and utility up to this point, and it may not be obvious. Could explain it or cite something that explains it?}
-
-This means that there is a class of low-fidelity datasets that is useful in common research and engineering tasks. The benefits of using these datasets can be gained with little cost to patient privacy.
+This means that there is a class of low-fidelity datasets that is useful in common research and engineering tasks. The benefits of using these datasets can be gained with little cost to patient privacy. 
 
 \begin{figure}[Ht]
 \centering
@@ -134,7 +136,7 @@ This means that there is a class of low-fidelity datasets that is useful in comm
 \label{fig:Range of fidelity for synthetic data}
 \end{figure}
 
-Figure 1 shows the range of fidelity for synthetic data. In the context of healthcare relational datasets: 
+Figure \ref{fig:Range of fidelity for synthetic data} shows the range of fidelity for synthetic data. In the context of healthcare relational datasets: 
 
 \begin{itemize}
     \item \textbf{Structurally correct datasets} has the same column names, tables and relationships as real data. 
@@ -143,10 +145,6 @@ Figure 1 shows the range of fidelity for synthetic data. In the context of healt
     \item \textbf{Multivariate plausible datasets} implies that the values are correlated across different variables eg. a male patient like likely to be both heavier and taller than a female patient. 
     \item \textbf{Multivariate detailed datasets} are even realistic than a multivariate plausible data set, but less than a replica of the real data. An example is rows of data showing that patient with a diabetes diagnosis has more records of blood sugar readings than a patient with a broken bone.
 \end{itemize}
-
-
-
-For example, synthetic datasets for the purpose of software testing is necessarily low fidelity if access cannot be strictly controlled but it could still be useful by being only structurally correct.  Multivariate-plausible data could be sufficient for initial exploration, building pipe-lining and test modules for models. These tasks can be performed in a secure environment whose access is limited to students and researchers; these scripts ported into the hospital to be trained on real data if initial analysis is shown to be promising.
 
 \textit{NOTE: Carsten, can I have some help here please? Some words about state of the art generators and their applications and limitations would be really useful}
 
@@ -166,19 +164,11 @@ However, what engineers and researchers need when working on early stages of exp
 
 \subsubsection{Challenges}
 
+Listing \ref{lst:UCLH Requirements} enumerates the challenges of building synthetic data generators for UCLH Trust in terms of requirements that the generators must meet. This section expands on each challenge; the following section demonstrates how the design of SSG fulfils these requirements.
+
 \todo{Markus: The above defines the problem, the below talks about the issues in generating synthetic data to solve the problem. Are we missing a couple of sentences in between about how we want to use synthetic data (and not some other data release mechanism) to solve the problem?}
 
-\paragraph{To generate synthetic data using statistical properties or marginals of real data.}
-Hospitals are mandated or encouraged by various information acts to release hospital information to the public. The main reasons for this is allowing insights into quality of care provided by public or insurance funds and to enable patients to make informed decisions regarding where to seek care based on hospital performance and specialisations\cite{Werner2005}. 
-
-The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistics on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise on individual patient privacy.  
-
-Synthetic data generators can generate synthetic datasets which mirror statistical properties of real data. Therefore, a synthetic dataset that is generated using public statistical properties will not leak patient information any more than the release of hospital statistical properties has, already. 
-
-\todo{Markus: I find the above paragraph a bit confusing. The first sentence doesn't make it clear that we are talking about synthetic data generated specifically using existing aggregate stats discussed above, and the second sentence starts with "therefore" but doesn't really follow from the first.}
-    
-
-\paragraph{Generate structurally-correct synthetic data:}
+\paragraph{Produce relational datasets for any given schema}
 
 Many data holders, including hospitals store patient electronic health records in relational databases. Data is often structured within complex schema that capture both single observations and time series data. These relational databases also include tables for vocabularies such as definitions of drugs, observations and diagnoses. 
 
@@ -186,15 +176,33 @@ Under this requirement a minimally useful synthetic dataset must at the very lea
 
 An additional complexity here is in generating synthetic time series data eg. blood pressure values every ten minutes for a patient in intensive care unit. In order to be multivariate plausible, the data needs to contain the correct frequencies for data collection as well as plausible values that depend on a patient's physiology. This is generated across multiple tables as well.  
 
-\paragraph{To explain clearly what patient information is disclosed}
+\paragraph{To generate synthetic data using statistical properties computed from real patients}
+Hospitals are mandated or encouraged by various information acts to release hospital information to the public. The main reasons for this is allowing insights into quality of care provided by public or insurance funds and to enable patients to make informed decisions regarding where to seek care based on hospital performance and specialisations\cite{Werner2005}. 
+
+The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes aggregate data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistical properties on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise on individual patient privacy.  
+
+Synthetic data generators can use aggregate data and statistical properties of real data to generate synthetic datasets which are measurably closer to real data. A synthetic dataset generated using public information will not reveal any additional patient information beyond what is already publicly available.
+
+\todo{Markus: I find the above paragraph a bit confusing. The first sentence doesn't make it clear that we are talking about synthetic data generated specifically using existing aggregate stats discussed above, and the second sentence starts with "therefore" but doesn't really follow from the first.}
+    
+
+\paragraph{Make names, values and how these properties were computed be human-readable}
+
+\todo{Markus: Could the content in this section be restructured so that it wouldn't start with differential privacy? Something like synthetic data is complex and communicating about its privacy aspects is hard, and on top of that we want to use differential privacy which makes it extra hard.}
+    
+\todo{Markus: DP needs a citation.}
+
+\todo{May: Need to talk about SQL bits too}
 
 Differential privacy is the gold standard that protects individual data within a dataset while still allowing for the useful analysis of the aggregate data. However, the role of this concept when applied to synthetic data is challenging to explain. 
 
 Synthetic data is complex, people may not understand how data that does not represent real individuals still needs privacy considerations. Differential privacy is both technical and abstract, and there is a struggle to understand how it offers probabilistic but not absolute guarantees. Explaining this to custodians of highly sensitive data is difficult because privacy is expected but not always technically feasible.
 
+ \todo{Markus: Does saying "privacy is not always technically feasible" risk having some people think that it might be bypassed/ignored? Depends on the target audience.}
+
 The application of differential privacy to synthetic data compounds the explanations' complexities. However, this is an important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differentially private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
 
-
+ 
 \section{Generating Synthetic Patients Using SqlSynthGen}
 
 SqlSynthGen (SSG) is a software package that we have written to meet the challenges described in Section 3.3. When connected to an existing relational database, SSG creates new empty database with the same schema, copies over the non-sensitive data such as vocabulary tables and finally populates it with synthetic data. 
@@ -209,17 +217,17 @@ SSG configuration allows dataset output to be shifted towards the right in a sel
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.8\linewidth]{figures/SSG.png}
+\includegraphics[width=0.8\linewidth]{figures/Process.png}
 \caption{The processes of SQLSynthGen in order}
-\label{fig:Range of fidelity for synthetic data}
+\label{fig:SSG Process}
 \end{figure}
 
-SSG's steps for generating synthetic relational datasets, as shown in Figure 2, are as follows:
+SSG's steps for generating synthetic relational datasets, as shown in Figure \ref{fig:SSG Process}, are as follows:
 
 \begin{enumerate}
-    \item SSG discovers the schema of the real and creates a new database to store synthetic data. This new database will be populated in Step 3 below. 
-    \item SSG copies over some tables entirely. This step is to maintain foreign key constraints, and is used to populate lookup tables which do not have any privacy concerns.
-    \item By default, SSG populates the destination database with only structurally correct data. \item Alternatively, SSG extracts statistics from the source database to parameterise custom generators to make higher fidelity synthetic data. For example, we could extract mean height by age and gender and define some custom data generators to create a relationship between them. The user decides what is extracted and writes the custom generators as Python functions.
+    \item SSG discovers the schema of the real and \textbf{builds} a new database to store synthetic data. This new database will be populated by synthetic data generated in the next steps. Some tables of real data are copied over entirely. This step is to maintain foreign key constraints, and is used to populate lookup tables which do not have any privacy concerns.
+    \item By default, SSG \textbf{generates} random but structurally correct data. 
+    \item As an option, SSG can \textbf{refine} random values for higher accuracy by using extracted statistics from real data. For example, mean of height by age and gender can be extracted from real patients and the correlation be used to generate higher fidelity data.
 \end{enumerate}
 
 For more information and tutorials about SQLSynthGen, please refer to our repository at \url{https://github.com/alan-turing-institute/sqlsynthgen}. Our repository \cite{repository} contains installation instructions, comprehensive documentation and trouble shooting guides to help get started with the software. The repository also contains a simple tutorial using a Kaggle dataset \cite{airbnb} as well as an advanced example based on the Observational Medical Outcomes Partnership (OMOP)\cite{omop}, which provides a standardised data model for observational healthcare data. 
@@ -467,10 +475,8 @@ An SSG story generator is a Python generator (an unfortunate clash of terminolog
 % \subsection{Software Design and Development}
 
 \section{Plans for Implementation}
-% Detail how the software was implemented within the hospital's existing systems and workflows. (Not yet, but plans?)
-% Describe any challenges encountered during the implementation phase and how they were overcome. (Steve?)
-% Discuss the training and support provided to the hospital staff to facilitate the adoption of the software. (Steve?)
-% Include feedback from the hospital staff and patients, if available, to provide a comprehensive view of the software's impact. (Patient engagement group?)
+% Suggest how the software might sit within the hospital's existing systems and workflows. (Not yet, but plans?)
+% Describe any challenges anticipated during the implementation phase. Include feedback from the hospital staff and patients, if available, to provide a comprehensive view of the challenges. (Patient engagement group?) (Steve?)
 
 
 \section{Discussion}
