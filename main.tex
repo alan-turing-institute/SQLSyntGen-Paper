@@ -19,58 +19,51 @@ $^2$University College London
 \date{\today} % Or specify a specific date
 \maketitle
 \begin{abstract}
-There is appetite from UK government as well as UK public to see UK's National Health Services (NHS) harness data and artificial intelligence for the public good \cite{gov2022datasaves}\cite{Jones2022}. It is a major challenge to strike the balance between easing access to healthcare data in order to supercharge research, and maintaining the privacy of individual patients. We introduce a human-readable, risk guided approach to generating synthetic relational datasets to meet data sharing requirements in terms of data fidelity, utility, and tolerance of disclosure risk.
+The UK government and the public are interested to see the National Health Service (NHS) leverage data and artificial intelligence for the public good \cite{gov2022datasaves}\cite{Jones2022}. A major challenge is balancing the need between accessible healthcare data in order to boost research against the necessity of protecting patient privacy. We introduce SqlSynthGen (SSG), a method for generating synthetic relational datasets. SSG offers a human-readable, risk-guided approach to refining data fidelity while managing disclosure risk. This paper presents SSG, specifically focusing on its application for generating synthetic hospital patient data.
 \end{abstract}
 
 \section{Introduction}
 
 Hospitals currently manage and produce large quantities of
-patient data stored in relational databases. While hospital staff access this data for their clinical duties, other professional communities--- scientists, software engineers and educators --- necessarily follow lengthy processes to be granted access. These controls are in place to ensure patient data ---which is both sensitive and valuable~\cite{schomerus2022}--- is accessed for only legitimate reasons.
-These controls involve drawing up staff contracts, implementing de-identification or anonymisation mechanisms to remove personal information, and accessing data only via trusted environments~\cite{harris2022}.
+patient data stored in relational databases. While hospital staff access this data for their clinical duties, other professional communities--- scientists, software engineers and educators --- necessarily follow lengthy processes to be granted access. Controls are in place to ensure patient data ---which is both sensitive and valuable~\cite{schomerus2022}--- is accessed for only legitimate reasons. Current practices involve drawing up employee contracts, implementing de-identification or anonymisation mechanisms to remove personal information, and accessing data only via trusted environments~\cite{harris2022}.
 
-While protecting patient privacy is of utmost importance, denying all access to 
-patient data hinders its potential.
-For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised treatments~\cite{tucker2020}; software engineers and data scientists could develop infrastructure to support patient care and hospital operations~\cite{harris2022}; and patient data can be used to train the next generation of healthcare practitioners and researchers.
+While protecting patient privacy is of utmost importance, denying all access to patient data hinders its potential. For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised treatments~\cite{tucker2020}; software engineers and data scientists could develop infrastructure to support patient care and hospital operations~\cite{harris2022}; and patient data can be used to train the next generation of healthcare practitioners and researchers.
 
-In order to both protect user privacy \emph{and} control access, current techniques are used, which include mechanisms like de-identification, aggregation over the original data, and storing them in trusted research environments (TRE) for access by third parties. While these techniques provide an extra layer of protection, they are not exempt from vulnerabilities~\cite{near2021}. For example, de-identified data releases are still susceptible to linkage attacks. Aggregation requires releasing only aggregate population metrics, like counts or averages, but this still leaves outliers vulnerable to identification~\cite{tucker2020}. 
+In order to both protect user privacy \emph{and} control access, current techniques are used, which include mechanisms like data agreements, de-identification or anonymisation, aggregation over the original data, and storing them in trusted research environments (TRE) for access by third parties. While these techniques provide an extra layer of protection, they are not exempt from vulnerabilities~\cite{near2021}. For example, de-identified data releases are still susceptible to linkage attacks. Aggregation requires releasing only aggregate population metrics, like counts or averages, but this still leaves outliers vulnerable to identification~\cite{tucker2020}. Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release \emph{synthetic} patient data. 
 
-Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release \emph{synthetic} patient data. Synthetic data is data that is manufactured, as opposed to real data that is collected from real-life events and people. 
-\emph{Synthetic data generators (SDG)} use algorithms to produce synthetic data entries while preserving statistical properties of the real dataset.
-There are multiple SDG approaches in the literature, each one targeting a specific data type, like tabular data or time-series data~\cite{DBLP:journals/corr/abs-2205-03257}.
+Synthetic data is data that is manufactured, as opposed to real data that is collected from real-life events and people. \emph{Synthetic data generators (SDG)} use algorithms to produce synthetic data entries while preserving statistical properties of the real dataset. There are multiple SDG approaches in the literature, each one targeting a specific data type, like tabular data or time-series data~\cite{DBLP:journals/corr/abs-2205-03257}.
 SDGs can offer mathematical guarantees of the preservation of user privacy~\cite{Kopp2021MicrosoftSD, Cai2023} by incorporating differential privacy.
 
-In this paper, we describe our work on using SDG at the University College London Hospitals (UCLH) NHS Foundation Trust.
-Each year, UCLH admits 100,000 patients and stores their data in a relational database. Broadly, we discover that these are the requirements regarding their SDG utilisation:
+In this paper, we describe our work on developing a new SDG approach at the University College London Hospitals (UCLH) NHS Foundation Trust. Each year, UCLH admits 100,000 patients and stores their data in a relational database. Broadly, we discover that these are their requirements regarding their utilisation:
 
-\begin{listing}
+\begin{listing}[ht]
 \begin{itemize}
     \item \textbf{REQ-1:} The synthetic datasets should be in the form of relational datasets for any given relational schema
-    \item \textbf{REQ-2:} The generator should utilise statistical properties computed from real patients to manufacture these synthetic data
-    \item \textbf{REQ-3:} The names, values and how these properties were computed should be human-readable for audit. 
+    \item \textbf{REQ-2:} The generator can manufacture synthetic data by utilising aggregates and statistical properties extracted from real patients
+    \item \textbf{REQ-3:} The names, values and how these properties were extracted should be human-readable for audit. 
 \end{itemize}
 \caption{Requirements for Synthetic Data Generation at UCLH Trust}
 \label{lst:UCLH Requirements}
 \end{listing}
 
-We developed \textsc{SqlSynthGen}~\cite{repository} to meet these requirements\ref{lst:UCLH Requirements} over \emph{relational datasets}, with multiple tables and foreign keys between them~\cite{Cai2023}.
-\textsc{SqlSynthGen} is an open-source Python package that can automatically replicate the database schema of a target database.
-Once the replica is in place, \textsc{SqlSynthGen} can generate synthetic samples at different levels of fidelity: from low-fidelity random values compliant with the database schema, to high-fidelity samples from probability distributions learned from real data.
-Instead of using a black-box approach to SDG ---like deep generative models with thousands of parameters~\cite{DBLP:journals/pami/Bond-TaylorLLW22}--- \textsc{SqlSynthGen} uses a white-box approach, where the metrics used for SDG are expressed as SQL queries in human-readable format.
-For ensuring patient privacy, \textsc{SqlSynthGen} supports differential privacy which adds quantifiable noise to these metrics, allowing the adjustment of fidelity.
+We developed \textsc{SqlSynthGen}~\cite{repository} to meet these requirements\ref{lst:UCLH Requirements} over relational datasets, with multiple tables and foreign keys between them~\cite{Cai2023}.
+\textsc{SqlSynthGen} is an open-source Python package that can replicate the database schema of a target database. Once the replica is in place, \textsc{SqlSynthGen} can generate synthetic samples at different levels of fidelity: from low-fidelity random values compliant with the database schema, to high-fidelity samples from probability distributions learned from real data.
+
+\textsc{SqlSynthGen} uses a white-box approach where information extraction from real data are expressed as SQL queries in human-readable format, instead of black-box approaches like deep generative models with thousands of parameters~\cite{DBLP:journals/pami/Bond-TaylorLLW22}. For ensuring patient privacy, \textsc{SqlSynthGen} supports differential privacy to add quantifiable noise to aggregates and statistical properties.
 
 \section{Sharing Patient Data}
 
-This section starts by enumerating motivations for sharing patient data. An understanding of motivations is important because the requirements of appropriate data sharing mechanisms depend on this. Why we want to share data decides what data needs to be shared, and this in turn defines the requirements to be met if the data is to reasonably be safely shared.
+This section starts by enumerating motivations for sharing patient data. An understanding of motivations is important because the requirements of appropriate data sharing mechanisms depend on this. Why we want to share data decides what minimum data needs to be shared, and this in turn defines the requirements to be met if the data is to be shared reasonably safely.
 
-We then survey the current privacy preservation mechanisms ecosystem that are available to address the requirements. Hospital Trusts enable external collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing mechanisms. The aim of these mechanisms are to protect patient privacy while facilitating research and collaboration. We show that current mechanisms for addressing data sharing problems \todo{Markus: Could mechanisms for addressing data sharing problems be simplified to just "mechanisms for data sharing?"} are  a) time-consuming, b) linked to inadequate privacy protection measures~\cite{near2021, tucker2020}, c) a cause of unnecessary friction to analysis~\cite{ODonovan2023}, d) unsuitable for scaling to large relational datasets, a format in which many patient datasets are stored or e) able to achieve high fidelity at the cost of limited scalability~\cite{Cai2023}.
+We then survey the current privacy preservation practices currently adopted to address the requirements. Hospital Trusts enable collaborators access to patient data through a variety of controlled, secure, and legally compliant data-sharing practices.  We show that these are  a) time-consuming, b) linked to inadequate privacy protection measures~\cite{near2021, tucker2020}, c) a cause of unnecessary friction to analysis~\cite{ODonovan2023}, d) unsuitable for scaling to large relational datasets, a format in which many patient datasets are stored or e) able to achieve high, explainable fidelity at the cost of time series data and limited scalability~\cite{Cai2023}.
 
 \subsection{On the Benefits of Sharing Patient Data}
 
 \paragraph{Enhancing Research Quality and Innovation:} 
-Collaboration can lead to more comprehensive research studies, allowing healthcare practitioners and researchers to test hypotheses or observe trends across a broader dataset than what's available internally. How well a dataset represents the true distribution matters more than simply dataset size\cite{app11020796}. In the medical domain, where lack of data is a common occurrence, the amalgamation of multiple datasets has a better chance of representing true distribution. This enhances the reproducibility and robustness of research findings.
+Collaboration can lead to more comprehensive research studies, allowing healthcare practitioners and researchers to test hypotheses or observe trends across a broader dataset than what's available internally. How well a dataset represents the true distribution matters more than simply dataset size\cite{app11020796}. In the medical domain, where lack of data is a common occurrence, the amalgamation of diverse datasets has a better chance of representing true underlying distributions. This enhances the reproducibility and robustness of research findings.
 
 \paragraph{Access to Specialised Expertise:} 
-External collaborators bring specialised knowledge and skills that complement the in-house capabilities of a hospital. For example, collaborations with methodology researchers can lead to state-of-the-art data analysis and interpretation, thereby improving both tool development and research outcomes. Software engineers and machine learning operations (ML Ops) engineers can build customised cyber-physical infrastructure to support analysis of patient data in real time within the hospital\cite{harris2022}.
+External collaborators bring specialised knowledge and skills that complement the in-house capabilities of a hospital. For example, collaborations with methodology researchers can lead to state-of-the-art data analysis and interpretation, thereby improving both method development and treatment outcomes. Software engineers and machine learning operations engineers can build customised cyber-physical infrastructure to support analysis of patient data in real time\cite{harris2022}.
 
 \paragraph{Accelerating Medical Discoveries:}
 By pooling resources and data between hospitals, research can proceed at a faster pace\cite{app11020796}, potentially leading to quicker discoveries in disease mechanisms, treatment effectiveness, and development of new therapies or medical technologies. Sharing patient data can facilitate the recruitment of participants for clinical trials, ensuring a diverse and adequate sample size. This can be crucial in studying rare diseases or sub-types of common diseases, especially in hospitals that offer specialisations not commonly offered elsewhere in the world. 
@@ -86,11 +79,13 @@ By pooling resources and data between hospitals, research can proceed at a faste
 \subsection{Current Practices For Sharing Patient Data}
 
 \paragraph{De-identification and Anonymisation of Patient Data:}
-De-identification is the process of obscuring or replacing personal identifiers to prevent the direct association of data with an individual. However, this does not necessarily eliminate the possibility of re-identification. As medical information is highly time-contextual, de-identified medical data will retain higher data utility if personal identifiers such as timestamps are not removed. However timestamps are considered personal health information; they can be used to re-identify a patient by linking a patient's records over multiple de-identified datasets. In addition, the pattern of timestamps can disclose information about a patient's health, as well as their frequencies away from home.
+De-identification is the process of obscuring or replacing personal identifiers to prevent the direct association of data with an individual. Common de-identification methods include explicitly removing,  masking or pseudonymisation of direct identifiers, and  aggregating data to remove specificity eg. binning.  
 
-Anonymisation ensures that data cannot be linked back to an individual by any means. Unlike de-identification, this process is irreversible. Data has to be stripped of all personal identifying details. This anonymised medical data has reduced richness of data and is limited what can be learnt from it. 
+Anonymisation ensures that data cannot be linked back to an individual by any means. Anonymisation strips datasets of all personal identifying details but it is not provable when this has been achieved. Conservative measures will strip a lot of information thereby heavily affecting the value of the dataset, and we still cannot be certain that there is not some way to de-anonymise. 
 
-\todo{Markus: In the paragraphs about anonymised data, I think we could more forcefully bring up the point that it is very hard to know when data has been fully anonymised. You might have to strip a lot of things, heavily affecting utility, and still can’t be certain that there isn’t some way to deanonymise.}
+For example, the removal of timestamps from a medical dataset as part of an de-identification or anonymisation process is necessary because timestamps can be used to re-identify a patient by linking a patient's records over multiple de-identified datasets. The pattern of timestamps can disclose information about a patient's health, as well as their frequencies away from home.
+
+However the stripping of timestamps from a medical dataset erases important information because medical information is highly time-contextual. Part of the richness of medical data is its time-series nature. Medical data that has been stripped of time stamps has reduced richness of data and is limited what can be learnt from it. 
 
 Effectiveness of both de-identification and anonymisation techniques is highly dependent on context, which includes the dimensionality, volume, and statistical properties of data. Other important aspects that need to be considered include which types of applications or analyses the data are to be used for, whether the data will be released publicly or with additional access control, and whether the data are tabular, relational, or have longitudinal or transactional characteristics.
 
@@ -104,13 +99,15 @@ In addition, TREs provide both physical and virtual security. Data in TREs are o
 
 This means that working with data within TREs is far from a comfortable experience \cite{ODonovan2023}. In order to provide security measures, computational resources can be limited and the list of approved software packages for analysis is restrictive and not easily updated. There is significant process overhead generated by the need for detailed authentication into remote machines, activity logging, monitoring and compliance checks. There is a steep learning curve in working within a TRE, and new users are heavily dependent on support staff for technical assistance. Finally, the inability to egress data limits the sharing of interim findings and prevents close collaboration on ongoing data analysis.
 
-\paragraph{Honorary contracts for visiting researchers:}
+\paragraph{Honorary contracts and data agreements:}
 
-\todo{Markus: I think this section could use a sentence on how having an honorary contract solves data access problems. Just to link to the surrounding text.}
+In order for non-hospital/clinical staff to work with medical data, they typically either need to become honorary employees of a trust or their current institution need to enter into a data sharing agreement with the trust. Both are lengthy and restrictive.
 
-Getting an honorary contract with a hospital involves a lengthy series of steps designed to formalise the relationship between an individual (often a visiting researcher) and the hospital. These contracts are generally not paid positions but provide certain privileges and responsibilities within the hospital setting. 
+The process of obtaining an honorary contract typically begins with an initial inquiry and application to the relevant department or clinical group at the hospital. This is followed by credential verification and background checks, including border security investigations. Once these checks are satisfactorily completed, the relevant departments can grant approval. 
 
-Typical steps for obtaining an honorary contract involve initial inquiry and application to the relevant department or clinical group at the hospital, credential verification, background and border security investigations before approval from the relevant departments can be granted. The honorary contracts can then be drafted, reviewed, and signed. The visiting researcher attends induction and training before being issued identification and necessary access to relevant records. Honorary contracts have to be monitored and reviewed regularly. 
+To get a data agreement signed between two institutions, the first step is to identify the need for data sharing, specifying what data will be shared and how it will be used. Next, security requirements for storing, protecting, and accessing the data must be agreed upon by both parties. All these elements need to comply with relevant regulations. Finally, the agreement must be reviewed by the legal and compliance teams of both institutions to ensure all requirements are met and all parties are protected.
+
+% The visiting researcher attends induction and training before being issued identification and necessary access to relevant records. Honorary contracts have to be monitored and reviewed regularly. 
 
 \section{From Sharing Real Data to Sharing Synthetic Data}
 Real data is recorded from real life events or organisms. Synthetic data is manufactured data, and can be synthesised to be random, structurally or type accurate, or they can mirror statistical properties of another dataset. In the last case, statistical properties can be directly or indirectly observed, to inform the manufacturing process. When any properties of one dataset is used to guide the manufacturing process of another dataset, the first dataset is referred to as the 'real' or 'original' data. In the use case presented in this paper, 'real' data is hospital patient data. Our manufactured data is commonly referred to as 'synthetic' data.
@@ -407,8 +404,7 @@ Let us imagine two datasets:
 If both datasets were generated using a differentially-private \emph{mechanism}, performing a query on dataset $A$ should provide the same, or almost the same, result as performing the same query on dataset $B$~\cite{Kopp2021MicrosoftSD}.
 Differentially private mechanisms hide the presence or absence of person $X$ ---or one any individual--- in the dataset, which implies strong protection of their privacy~\cite{near2021}.
 To accomplish this, these mechanisms inject random noise to the synthetic data.
-The amount of noise is a function of the privacy parameter epsilon $\varepsilon$ that measures how similar the datasets $A$ and $B$ are required to be. $\varepsilon$ needs to be
-chosen carefully to provide the required privacy guarantee.
+The amount of noise is a function of the privacy parameter epsilon $\varepsilon$ that measures how similar the datasets $A$ and $B$ are required to be. $\varepsilon$ needs to be chosen carefully to provide the required privacy guarantee.
 
 Generating synthetic data in a differentially private way usually requires 3 steps: 1) \emph{select}, or choose, some queries over the original data, 2) \emph{measure}, or execute, those queries using a differentially private mechanism, and 3) \emph{generate} synthetic data using these measurements~\cite{DBLP:journals/pvldb/McKennaMSM22}.
 \textsc{SqlSynthGen} enables the \emph{select} and \emph{measure} steps by supporting differentially private SQL queries in `src-stats.yaml`  (Listing \ref{lst:dp-queries}).
