@@ -39,8 +39,6 @@ Instead of releasing \emph{real} patient data ---either partial or aggregate--- 
 There are multiple SDG approaches in the literature, each one targeting a specific data type, like tabular data or time-series data~\cite{DBLP:journals/corr/abs-2205-03257}.
 SDGs can offer mathematical guarantees of the preservation of user privacy~\cite{Kopp2021MicrosoftSD, Cai2023} by incorporating differential privacy.
 
-\todo{Markus: I wonder if the "Instead of releasing" sentence should start a new paragraph, since it introduces the key thing that we are doing.}
-
 In this paper, we describe our work on using SDG at the University College London Hospitals (UCLH) NHS Foundation Trust.
 Each year, UCLH admits 100,000 patients and stores their data in a relational database. Broadly, we discover that these are the requirements regarding their SDG utilisation:
 
@@ -88,13 +86,13 @@ By pooling resources and data between hospitals, research can proceed at a faste
 \subsection{Current Practices For Sharing Patient Data}
 
 \paragraph{De-identification and Anonymisation of Patient Data:}
-De-identification is the process of obscuring or replacing personal identifiers to prevent the direct association of data with an individual. However, this does not necessarily eliminate the possibility of re-identification. As medical information is highly time-contextual, de-identified medical data will retain higher data utility if personal identifiers such as timestamps are not removed. \todo{Markus: I’m a bit confused by this one. Is this trying to say that it’s important to keep timestamps to keep utility high, or that keeping timestamps makes reidentification possible?} However timestamps are considered personal health information; they can be used to re-identify a patient by linking a patient's records over multiple de-identified datasets. In addition, the pattern of timestamps can disclose information about a patient's health, as well as their frequencies away from home.
+De-identification is the process of obscuring or replacing personal identifiers to prevent the direct association of data with an individual. However, this does not necessarily eliminate the possibility of re-identification. As medical information is highly time-contextual, de-identified medical data will retain higher data utility if personal identifiers such as timestamps are not removed. However timestamps are considered personal health information; they can be used to re-identify a patient by linking a patient's records over multiple de-identified datasets. In addition, the pattern of timestamps can disclose information about a patient's health, as well as their frequencies away from home.
 
 Anonymisation ensures that data cannot be linked back to an individual by any means. Unlike de-identification, this process is irreversible. Data has to be stripped of all personal identifying details. This anonymised medical data has reduced richness of data and is limited what can be learnt from it. 
 
 \todo{Markus: In the paragraphs about anonymised data, I think we could more forcefully bring up the point that it is very hard to know when data has been fully anonymised. You might have to strip a lot of things, heavily affecting utility, and still can’t be certain that there isn’t some way to deanonymise.}
 
-Effectiveness of both de-identification and anonymisation techniques is highly dependent on context, which includes the dimensionality, volume, and statistical properties of data. Other important aspects that need to be considered include which types of applications or analyses the data are to be used for, whether the data will be released publicly or with additional access control and whether the data are tabular, relational, or have longitudinal or transactional characteristics.
+Effectiveness of both de-identification and anonymisation techniques is highly dependent on context, which includes the dimensionality, volume, and statistical properties of data. Other important aspects that need to be considered include which types of applications or analyses the data are to be used for, whether the data will be released publicly or with additional access control, and whether the data are tabular, relational, or have longitudinal or transactional characteristics.
 
 \paragraph{Trusted Research Environments:}
 
@@ -179,14 +177,13 @@ An additional complexity here is in generating synthetic time series data, e.g. 
 \paragraph{To generate synthetic data using statistical properties computed from real patients}
 Hospitals are mandated or encouraged by various information acts to release hospital information to the public. The main reasons for this are allowing insights into quality of care provided by public or insurance funds and to enable patients to make informed decisions regarding where to seek care based on hospital performance and specialisations\cite{Werner2005}. 
 
-The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes aggregate data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistical properties on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise on individual patient privacy.  
+The type of information that is released in the public domain include quality of care indicators, patient safety data, readmission rates and service availability. This includes aggregate data about patient outcomes, infection rates, details on specialised services, bed occupancy, Accidents and Emergency (A\&E) wait times as well as statistical properties on patients returning for treatment within a period of discharge. This information is published regularly and does not compromise individual patient privacy.  
 
 Synthetic data generators can use aggregate data and statistical properties of real data to generate synthetic datasets which are measurably closer to real data. A synthetic dataset generated using public information will not reveal any additional patient information beyond what is already publicly available.
 
-\todo{Markus: I find the above paragraph a bit confusing. The first sentence doesn't make it clear that we are talking about synthetic data generated specifically using existing aggregate stats discussed above, and the second sentence starts with "therefore" but doesn't really follow from the first.}
-    
-
 \paragraph{Make names, values and how these properties were computed be human-readable}
+
+\todo{Markus: What does "names" in this title refer to?}
 
 \todo{Markus: Could the content in this section be restructured so that it wouldn't start with differential privacy? Something like synthetic data is complex and communicating about its privacy aspects is hard, and on top of that we want to use differential privacy which makes it extra hard.}
     
@@ -203,9 +200,9 @@ Synthetic data is complex, people may not understand how data that does not repr
 The application of differential privacy to synthetic data compounds the explanations' complexities. However, this is an important discussion, there is a necessary understanding to be achieved here because the interplay between privacy and utility governs the results of a differentially private synthetic data generator. The only people who can take the responsibility for managing the balance between privacy and utility are the data custodians.
 
  
-\section{Generating Synthetic Patients Using SqlSynthGen}
+\section{Generating Synthetic Data Using \textsc{SqlSynthGen}}
 
-SqlSynthGen (SSG) is a software package that we developed to meet the requirements outlined in Section 3.3. When connected to an existing relational database, SSG builds a new empty database with the same schema. It copies over the non-sensitive data, such as look-up tables, and generate structurally correct synthetic data with random values. Optionally, SSG can refine these synthetic values using aggregates and statistical properties. The new database is then populated with these synthetic values.  
+\textsc{SqlSynthGen} (SSG) is a software package that we developed to meet the requirements outlined in Section 3.3. When connected to an existing relational database, SSG builds a new empty database with the same schema. It copies over the non-sensitive data, such as look-up tables, and generate structurally correct synthetic data with random values. Optionally, SSG can refine these synthetic values using aggregates and statistical properties. The new database is then populated with these synthetic values.  
 
 \subsection{Technical Overview}
 
@@ -213,11 +210,9 @@ SSG's default output dataset is structurally correct and has no disclosure risk.
 
 SSG can be further configured to generate synthetic data that (in reference to Figure 1), can be as sophisticated as multivariate plausible data. This is achieved by allowing the user to define SQL statements that extract aggregate statistics and statistical properties from the real data. These extracted values are then used to shape the distributions and marginals of the synthetic data. \textbf{\textit{This meets REQ-2: To generate synthetic data using statistical properties computed from real patients.}} 
 
-As part of its process, SSG generates a human-readable audit trail that details the entire data generation process. This includes what information was extracted from real data, the methods used for extraction, the computed results, and how these values were injected into the synthetic data generation. \textbf{\textit{This meets {REQ-3: Make names, values and how these properties were computed be human-readable}}
+As part of its process, SSG generates a human-readable audit trail that details the entire data generation process. This includes what information was extracted from real data, the methods used for extraction, the computed results, and how these values were injected into the synthetic data generation. \textbf{\textit{This meets REQ-3: Make names, values and how these properties were computed be human-readable}}
 
 SSG pipeline design enables the selective production of synthetic datasets with varying levels of fidelity. Users control the shaping of synthetic data by specifying which information is extracted from real data, how it is computed, and how it is utilized. SSG’s configuration supports agile development, allowing for incremental fidelity improvements as needed, while maintaining transparency, auditability, and control over privacy risks at every stage. Additionally, users have the option to apply differential privacy to protect the marginals extracted from the source data.
-
-In order to support this design, SSG's process for generating synthetic relational datasets can be broken into three separate steps, as shown in Figure \ref{fig:SSG Process}. They are as follows:
 
 \begin{figure}[ht]
 \centering
@@ -226,8 +221,10 @@ In order to support this design, SSG's process for generating synthetic relation
 \label{fig:SSG Process}
 \end{figure}
 
+In order to support this design, SSG's process for generating synthetic relational datasets can be broken into three separate steps, as shown in Figure \ref{fig:SSG Process}. They are as follows:
+
 \begin{enumerate}
-    \item SSG \textbf{builds} a new database to store synthetic data. This new database will be populated by synthetic data generated in the next steps. Look-up tables which do not have any privacy concerns are copied over entirely, to to maintain foreign key constraints.
+    \item SSG \textbf{builds} a new database to store synthetic data. This new database will be populated by synthetic data generated in the next steps. Look-up tables which do not have any privacy concerns are copied over entirely, to maintain foreign key constraints.
     \item By default, SSG \textbf{generates} random but structurally correct data. 
     \item As an option, SSG can \textbf{refine} random values for higher accuracy by using extracted statistics from real data. For example, mean of height by age and gender can be extracted from real patients and the correlation be used to generate higher fidelity data.
 \end{enumerate}
@@ -236,18 +233,16 @@ For more information and tutorials about SQLSynthGen, please refer to our reposi
 
 In the following sections, we demonstrate the use of SSG in creating synthetic data based on a publicly available AirBnB Kaggle dataset \cite{airbnb}.
 
-\subsection{Generating a Synthetic Replica of a Target Database}
+\subsection{Building a Replica of a Real Dataset}
 
-In this example, let us consider that our dataset is contained in an `airbnb` database in a local PostgreSQL instance. We want to port the schema to a new `airbnb\_synthetic` database, and populate the `airbnb\_synthetic` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
+In this example, let us consider that our dataset is contained in a database called `airbnb` in a local PostgreSQL instance. We want to port the schema to a new `airbnb\_synthetic` database, and populate the `airbnb\_synthetic` database with synthetic rows that mirror some of the statistical properties of the `airbnb` dataset.
 
 % \paragraph{Connecting to the target database:}
-\paragraph{Step 1: To build schema tables and copy over non-sensitive values}
+\paragraph{Build schema tables:}
 % \todo{Carsten feedback: Less details in this section, need refinement. Make it match the process steps above.}
-We connect to the real dataset by setting connection credentials in the environment variables. We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables} and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
+We connect to the real dataset by setting connection credentials in the relevant environment variables. We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables}, and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
 
-The first file, `orm.py`, describes the structure of the PostgreSQL `airbnb` dataset by mapping each table in 'airbnb' to a Python class, with table columns represented as class variables. This mapping is generated using SQLAlchemy\cite{sqlalchemy}, which is a SQL toolkit and Object-Relational Mapping (ORM) library for Python. The use of SQLAlchemy in SSG means that no further user configuration is required to describe the schema of the original dataset. 
-
-The `orm.py` file is then used as basis to make a new `airbnb\_synthetic` PostgreSQL database with the necessary tables, columns, and data types. Listing \ref{lst:orm.py} shows a snippet from `orm.py` which demonstrates the mapping of the `users` table from the `airbnb`  dataset as a Python class.
+The first file, `orm.py`, outlines the structure of the PostgreSQL `airbnb` dataset by mapping each table in 'airbnb' to a corresponding Python class. Each column in these tables is represented as a class field. This mapping is generated using SQLAlchemy\cite{sqlalchemy}, which is a SQL toolkit and Object-Relational Mapping (ORM) library for Python. By using SQLAlchemy in SSG for mapping, users do not need to perform any additional configuration to describe the schema of the real dataset. The `orm.py` file serves as a foundation for building a new `airbnb\_synthetic` PostgreSQL database, complete with the necessary tables, columns and data types. Listing \ref{lst:orm.py} shows a snippet from `orm.py` that demonstrates how the  `users` table from the `airbnb`  dataset is mapped as a Python class.
 
 \begin{listing}[H]
 \begin{minted}[
@@ -266,32 +261,11 @@ class User(Base):
 \label{lst:orm.py}
 \end{listing}
 
-The second file, \texttt{ssg.py}, contains auto-generated Python code for populating each table column. This code generates default synthetic values that match the data types defined by the database schema but are not in any way related to the actual data. The provision of human-readable Python code describes to the user how each table column is populated by default. This code can be used as a template that users can edit to incorporate different generation methods as needed.
+\paragraph{Copy over lookup tables}
 
-Listing \ref{lst:ssg.py} demonstrates the auto-generated Python code for generating `id` and `date\_account\_created` values for the `User` table. `id` is assigned generic, password-like values, and `date\_account\_created` is assigned a random date value. We execute \mintinline{bash}{sqlsynthgen create-data} to populate `airbnb\_synthetic` with values generated by \texttt{ssg.py}.
+A lookup table, or a vocabulary is a table used to store a predefined set of values that are referenced by other tables. They contain finite and static set of values such as codes, names of categories or descriptions. Look-up tables are a good practice adopted help normalise databases by removing redundancy and enabling efficient data management. They work by using foreign key constraints to ensure values in related tables are consistent and valid. These foreign key constraints need to be satisfied when generating synthetic data in relational datasets.  
 
-\begin{listing}[H]
-\begin{minted}[
-    % gobble=2,
-    frame=single,
-    % linenos
-  ]{Python}
-class usersGenerator:
-    num_rows_per_pass = 1
-
-    def __init__(self, src_db_conn, dst_db_conn):
-        pass
-        self.id = generic.person.password()
-        self.date_account_created = generic.datetime.date()
-        ...
-\end{minted}
-\caption{A Python class for generating synthetic id and date\_account\_created values for Postgres table `User`}
-\label{lst:ssg.py}
-\end{listing}
-
-\paragraph{Copy vocabulary tables:}
-
-In relational synthetic datasets, vocabularies do not need to be synthesised. On their own, vocabularies provide only limited utility, as the more interesting aspects of the data are usually found in the non-vocabulary tables. However, improving the fidelity of the overall dataset can be achieved by ensuring the vocabulary tables have perfect fidelity from the beginning, as they typically do not raise privacy concerns. In this section, we will show how to manage vocabulary tables by copying them in their entirety, thereby eliminating the need for synthesis.
+On their own, vocabularies provide only limited utility, as the more interesting aspects of the data are usually found in the non-vocabulary tables. The fidelity of the synthetic dataset can be improved by ensuring the vocabulary tables have perfect fidelity from the beginning, as they do not raise privacy concerns, although some vocabularies are copyright-protected. In this section, we demonstrate how SSG addresses vocabulary tables by copying them in their entirety, thereby eliminating the need for synthesising.
 
 First we specify vocabulary tables in a \texttt{config.yaml}; the listing \ref{lst:vocabulary-config.yaml } below denotes `countries` as a vocabulary table. All values in denoted vocabulary tables are copied to an auto-generated \texttt{.yaml} file. Listing \ref{lst:countries.yaml} shows a snippet of data from the `countries` table which has been copied to a auto-generated \texttt{countries.yaml} file.
 
@@ -333,14 +307,36 @@ The primary reason for copying vocabularies this way is to maximise transparency
 
 The downside of this approach is clear when scaling up to address vocabulary tables which are very large. Therefore our generator pipeline is modular to ensure that vocabularies need only be copied once when creating more rows to add into a synthetic dataset. 
 
-\subsection{Generating High-Fidelity Synthetic Data}
+\paragraph{Generate Random Values that are Structurally Correct}
 
-As explained above, the default behaviour of SSG is to generate syntactically correct values. This section shows how we incorporate aggregate statistics from real data in order to generate synthetic data that retains those statistical properties. 
+The second auto-generated file, `ssg.py`, contains Python code that generates random values matching the data types defined by the Python classes. This human-readable Python code serves as part of the audit trail, demonstrating how values for populating each table column are generated. For complex schemas with multiple tables and columns, the generator code for each column is easily identifiable and can be customised independently of rest of the generator. 
 
-\paragraph{Measure aggregate statistics:}
-This section shows an example to generate normally distributed synthetic values to populate a `users.age` column, with reference to the mean and standard deviation values of the real data. The user begins by defining SQL statements in the `age\_stats` section of a `config.yaml` file. This is demonstrated in listing \ref{lst:define sql and row generator in config.yaml}. 
+Listing \ref{lst:ssg.py} demonstrates the auto-generated Python code for generating `id` and `date\_account\_created` values for the `User` table. `id` is assigned generic, password-like values, and `date\_account\_created` is assigned a random date value.
 
-SSG uses the credentials stored in the .env file to authenticate to the database. This authentication allows SSG to execute SQL statements needed to compute the required statistical values. Computed values are recorded in an auto-generated \texttt{src-stats.yaml} file, demonstrated in listing \ref{lst:age_stats src-stats.yaml}. 
+\begin{listing}[H]
+\begin{minted}[
+    % gobble=2,
+    frame=single,
+    % linenos
+  ]{Python}
+class usersGenerator:
+    num_rows_per_pass = 1
+
+    def __init__(self, src_db_conn, dst_db_conn):
+        pass
+        self.id = generic.person.password()
+        self.date_account_created = generic.datetime.date()
+        ...
+\end{minted}
+\caption{A Python class for generating synthetic id and date\_account\_created values for Postgres table `User`}
+\label{lst:ssg.py}
+\end{listing}
+
+\paragraph{Refine values using aggregate statistics}
+
+The default behaviour of SSG is to generate syntactically correct, random values. This section shows how we incorporate aggregate and statistical properties of real data in order to generate synthetic data that retain those properties. 
+
+We demonstrate an example to generate normally distributed synthetic values to populate a `users.age` column, with reference to the mean and standard deviation values of the real data. The user begins by defining SQL statements in the `age\_stats` section of a `config.yaml` file. This is demonstrated in listing \ref{lst:define sql and row generator in config.yaml}. SSG uses the credentials provided to authenticate to the database and execute SQL statements to compute the required values. Computed values are recorded in an auto-generated \texttt{src-stats.yaml} file, demonstrated in listing \ref{lst:age_stats src-stats.yaml}. These can be can be referenced by the Python data generators. Listing \ref{lst:provider-function} shows the Python provider function that generates a distribution of values to meet the statistical properties computed and recorded in `config.yaml` and `src-stats.yaml`.
 
 \begin{listing}[H]
 \begin{minted}[
@@ -362,7 +358,7 @@ SSG uses the credentials stored in the .env file to authenticate to the database
                   query_results: SRC_STATS["age_stats"]
                 columns_assigned: age
 \end{minted}
-\caption{A SQL statement to compute mean and average of column `users.age` }
+\caption{A section of the config.yaml file that shows an SQL statement to compute mean and average of column `users.age`, with results stored as `age_stats` }
 \label{lst:define sql and row generator in config.yaml}
 \end{listing}
 
@@ -380,8 +376,6 @@ SSG uses the credentials stored in the .env file to authenticate to the database
 \label{lst:age_stats src-stats.yaml}
 \end{listing}
 
-All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referenced by the Python data generators. Listing \ref{lst:provider-function} shows the Python provider function that generates a distribution of values to meet the statistical properties computed and recorded in `config.yaml` and `src-stats.yaml`.
-
 \begin{listing}[H]
 \begin{minted}[
     gobble=0,
@@ -398,24 +392,23 @@ All values extracted by SSG and placed in \texttt{src-stats.yaml} can be referen
 \label{lst:provider-function}
 \end{listing}
 
-The primary reason for extracting information using SQL statements and documenting it in config.yaml is to maximise transparency for auditing purposes. Similar to vocabularies, users can audit information that is disclosed about real data by reviewing the human-readable `config.yaml` and `src-stats.yaml` files. Multiple properties, such as marginals, percentiles, and skewness, can be used simultaneously to enhance the fidelity of synthetic data. These computations can be resource-intensive with large datasets. To address this, the SSG generator process is modularized: properties are computed and stored once, allowing subsequent generators to reliably reference these values, provided the real dataset has not significantly changed.
+The primary reason for extracting information using SQL statements and documenting it in `config.yaml` is to maximise transparency for auditing purposes. Similar to vocabularies, users can audit information that is disclosed about real data by reviewing the human-readable `config.yaml` and `src-stats.yaml` files. Multiple properties, such as marginals, percentiles, and skewness, can be used simultaneously to enhance the fidelity of synthetic data. These computations can be resource-intensive with large datasets. To address this, the SSG generator process is modularised: properties are computed and stored once, allowing subsequent generators to  reference these values, which will be reliable provided the real dataset has not changed significantly.
 
-\paragraph{Differentially Private Synthetic Data:}
-\todo{Carsten feedback: More details in this section, as is most interesting}
+\paragraph{Introduce differential privacy into aggregate statistics:}
 
 \emph{Differential privacy} is arguably the most popular technique for providing privacy guarantees on SDGs.
 Let us imagine two datasets:
 
 \begin{itemize}
-    \item A dataset $B$ \emph{with} information of person $X$.
-    \item A dataset $A$ \emph{without} information of person $X$.
+    \item A synthetic dataset $B$ generated \emph{with} information of person $X$.
+    \item A synthetic dataset $A$ generated \emph{without} information of person $X$.
 \end{itemize}
 
 If both datasets were generated using a differentially-private \emph{mechanism}, performing a query on dataset $A$ should provide the same, or almost the same, result as performing the same query on dataset $B$~\cite{Kopp2021MicrosoftSD}.
-Differentially private mechanisms hide the presence or absence of person $X$ ---or any individual--- in the dataset, which implies the protection of the contents of the data~\cite{near2021}.
-To accomplish this, these mechanisms inject random noise to the data.
-The amount of noise is a function of the privacy parameter epsilon $\varepsilon$, that needs to
-carefully tuned to provide privacy guarantees.
+Differentially private mechanisms hide the presence or absence of person $X$ ---or one any individual--- in the dataset, which implies strong protection of their privacy~\cite{near2021}.
+To accomplish this, these mechanisms inject random noise to the synthetic data.
+The amount of noise is a function of the privacy parameter epsilon $\varepsilon$ that measures how similar the datasets $A$ and $B$ are required to be. $\varepsilon$ needs to be
+chosen carefully to provide the required privacy guarantee.
 
 Generating synthetic data in a differentially private way usually requires 3 steps: 1) \emph{select}, or choose, some queries over the original data, 2) \emph{measure}, or execute, those queries using a differentially private mechanism, and 3) \emph{generate} synthetic data using these measurements~\cite{DBLP:journals/pvldb/McKennaMSM22}.
 \textsc{SqlSynthGen} enables the \emph{select} and \emph{measure} steps by supporting differentially private SQL queries in `src-stats.yaml`  (Listing \ref{lst:dp-queries}).
@@ -447,18 +440,17 @@ Generating synthetic data in a differentially private way usually requires 3 ste
 \label{lst:dp-queries}
 \end{listing}
 
-Internally, \textsc{SqlSynthGen} uses \textsc{SmartNoise SQL}\footnote{\url{https://docs.smartnoise.org/sql/index.html}.} to execute differentially private queries.
+Internally, \textsc{SqlSynthGen} uses \textsc{SmartNoise SQL}~\cite{allen2020opendp} to execute differentially private queries.
 As seen in Listing \ref{lst:dp-queries}, \textsc{SmartNoise SQL} needs additional information besides the SQL query for applying a differentially private mechanism, including the privacy parameter epsilon $\varepsilon$.
 Regarding the final \emph{generate} step, the query results are made available to provider functions ---like the one in Listing \ref{lst:provider-function}--- so \textsc{SqlSynthGen} users can use these measures for data generation. 
 
+% \paragraph{Build multivariate relationships across tables:}
 
-\paragraph{Build multivariate relationships across tables:}
+% Story generators are the most complex SSG configuration option. These address generating synthetic data with correlations that bridge different tables and multiple rows.
 
-Story generators are the most complex SSG configuration option. These address generating synthetic data with correlations that bridge different tables and multiple rows.
+% An SSG story generator is a Python generator (an unfortunate clash of terminology: Python uses the term “generator” to refer to objects that yield multiple values in a sequence), written by the user, that yields sets of rows to be written into the synthetic database. For instance, it may first yield a row specifying a person in the users table, and then a set of multiple rows for the sessions table that specify various browsing sessions this user has had. This set of multiple rows can be related in any user-defined way e.g.\ values increasing over time.
 
-An SSG story generator is a Python generator (an unfortunate clash of terminology: Python uses the term “generator” to refer to objects that yield multiple values in a sequence), written by the user, that yields sets of rows to be written into the synthetic database. For instance, it may first yield a row specifying a person in the users table, and then a set of multiple rows for the sessions table that specify various browsing sessions this user has had. This set of multiple rows can be related in any user-defined way e.g.\ values increasing over time.
-
-% \subsection{Software Design and Development}
+% \todo{Markus: This last section about story generators I think needs a rewrite. The details about Python stuff are unecessary, and a higher level explanation would be good.}
 
 \section{Plans for Implementation}
 % Suggest how the software might sit within the hospital's existing systems and workflows. (Not yet, but plans?)
