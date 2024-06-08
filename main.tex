@@ -10,7 +10,7 @@
 % \setuptodonotes{inline}
 
 \begin{document}
-\title{Transparent Decisions: Selective Information Disclosure With Synthetic Data}
+\title{Transparent Decisions: Selective Information Disclosure To Generate Synthetic Data}
 \author{
 Carlos Gavidia-Calderon$^1$, Steve Harris$^2$, Markus Hauru$^1$, Carsten Maple$^1$, Iain Stenson$^1$, and \\ May Yong$^1$ \\~\\
 $^1$The Alan Turing Institute \\
@@ -19,7 +19,7 @@ $^2$University College London
 \date{\today} % Or specify a specific date
 \maketitle
 \begin{abstract}
-The UK government and the public are interested to see the National Health Service (NHS) leverage data and artificial intelligence for the public good \cite{gov2022datasaves}\cite{Jones2022}. A major challenge is balancing the need between accessible healthcare data in order to boost research against the necessity of protecting patient privacy. We introduce SqlSynthGen (SSG), a method for generating synthetic relational datasets. SSG offers a human-readable, risk-guided approach to refining data fidelity while managing disclosure risk. This paper presents SSG, specifically focusing on its application for generating synthetic hospital patient data.
+The UK government and the public are interested to see the National Health Service (NHS) leverage data and artificial intelligence for the public good \cite{gov2022datasaves}\cite{Jones2022}. A major challenge is balancing the need between accessible healthcare data in order to boost research, against the necessity of protecting patient privacy. We introduce SqlSynthGen (SSG), a method for generating synthetic relational datasets. SSG offers a human-readable, risk-guided approach to refining data fidelity while managing disclosure risk. This paper presents SSG, specifically focusing on its application for generating synthetic hospital patient data.
 \end{abstract}
 
 \section{Introduction}
@@ -174,8 +174,6 @@ The type of information that is released in the public domain include quality of
 Synthetic data generators can use aggregate data and statistical properties of real data to generate datasets which are measurably closer to real data. A synthetic dataset generated using public information will not reveal any additional patient information beyond what is already publicly available.
 
 \paragraph{Ensure that the names and values of aggregate data and statistical properties, as well as the methods used to compute them, are easily understandable by humans.}
-
-% \todo{Markus: Could the content in this section be restructured so that it wouldn't start with differential privacy? Something like synthetic data is complex and communicating about its privacy aspects is hard, and on top of that we want to use differential privacy which makes it extra hard.}
 
 Aggregates and statistical properties are well-understood mathematical concepts. A comprehensive explanation of such information extracted from real patients datasets for the purpose of generating synthetic data should cover the following three points:
 
