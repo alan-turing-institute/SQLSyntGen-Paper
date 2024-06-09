@@ -228,7 +228,7 @@ In this example, let us consider that our dataset is contained in a database cal
 
 \paragraph{Build schema tables:}
 
-We connect to the real dataset by setting connection credentials in the relevant environment variables. We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables}, and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
+We connect to the real dataset by setting connection credentials in environment variables. We run a series of commands \mintinline{bash}{sqlsynthgen make-tables}, \mintinline{bash}{sqlsynthgen create-tables} and \mintinline{bash}{sqlsynthgen make-generators} to auto-generate two Python files. 
 
 The first file, `orm.py`, outlines the structure of the PostgreSQL `airbnb` dataset by mapping each table in 'airbnb' to a corresponding Python class. Each column in these tables is represented as a class field. This mapping is generated using SQLAlchemy\cite{sqlalchemy}, which is a SQL toolkit and Object-Relational Mapping (ORM) library for Python. By using SQLAlchemy in SSG for mapping, users do not need to perform any additional configuration to describe the schema of the real dataset. The `orm.py` file serves as a foundation for building a new `airbnb\_synthetic` PostgreSQL database, complete with the necessary tables, columns and data types. Listing \ref{lst:orm.py} shows a snippet from `orm.py` that demonstrates how the  `users` table from the `airbnb`  dataset is mapped as a Python class.
 
@@ -249,7 +249,7 @@ class User(Base):
 \label{lst:orm.py}
 \end{listing}
 
-\paragraph{Copy over lookup tables}
+\paragraph{Copy over lookup tables: }
 
 A lookup table, or a vocabulary is a table used to store a predefined set of values that are referenced by other tables. They contain finite and static set of values such as codes, names of categories or descriptions. Look-up tables are a good practice adopted help normalise databases by removing redundancy and enabling efficient data management. They work by using foreign key constraints to ensure values in related tables are consistent and valid. These foreign key constraints need to be satisfied when generating synthetic data in relational datasets. On their own, vocabularies provide only limited utility, as the more interesting aspects of the data are usually found in the non-vocabulary tables. 
 
@@ -295,7 +295,7 @@ The primary reason for copying vocabularies this way is to maximise transparency
 
 The downside of this approach is clear when scaling up to address vocabulary tables which are very large. Therefore our generator pipeline is modular to ensure that vocabularies need only be copied once when creating more rows to add into a synthetic dataset. 
 
-\paragraph{Generate Random Values that are Structurally Correct}
+\paragraph{Generate Random Values that are Structurally Correct: }
 
 The second auto-generated file, `ssg.py`, contains Python code that generates random values matching the data types defined by the Python classes. This human-readable Python code serves as part of the audit trail, demonstrating how values for populating each table column are generated. For complex schemas with multiple tables and columns, the generator code for each column is easily identifiable and can be customised independently of rest of the generator. 
 
@@ -320,7 +320,7 @@ class usersGenerator:
 \label{lst:ssg.py}
 \end{listing}
 
-\paragraph{Refine values using aggregate statistics}
+\paragraph{Refine values using aggregate statistics: }
 
 The default behaviour of SSG is to generate syntactically correct, random values. This section shows how we incorporate aggregate and statistical properties of real data in order to generate synthetic data that retain those properties. 
 
@@ -346,7 +346,7 @@ We demonstrate an example to generate normally distributed synthetic values to p
                   query_results: SRC_STATS["age_stats"]
                 columns_assigned: age
 \end{minted}
-\caption{A section of the config.yaml file that shows an SQL statement to compute mean and average of column `users.age`, with results stored as `age_stats` }
+\caption{A section of the config.yaml file that shows an SQL statement to compute mean and average of column `users.age`. Results are stored as `age\_stats`. }
 \label{lst:define sql and row generator in config.yaml}
 \end{listing}
 
