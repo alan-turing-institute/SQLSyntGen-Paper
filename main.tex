@@ -28,7 +28,7 @@ The UK government and the public are keen to see the National Health Service (NH
 Hospitals currently manage and produce large quantities of
 patient data stored in relational databases. While hospital staff access this data for their clinical duties, other professional communities--- scientists, software engineers and educators --- necessarily follow lengthy processes to be granted access. Controls are in place to ensure patient data ---which is both sensitive and valuable~\cite{schomerus2022}--- is accessed for only legitimate reasons. Current practices involve drawing up employee contracts, implementing de-identification or anonymisation mechanisms to remove personal information, and accessing data only via trusted environments~\cite{harris2022}.
 
-While protecting patient privacy is of utmost importance, denying all access to patient data hinders its potential. For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised treatments~\cite{tucker2020}; software engineers and data scientists could develop infrastructure to support patient care and hospital operations~\cite{harris2022}; and patient data can be used to train the next generation of healthcare practitioners and researchers.
+While protecting patient privacy is of utmost importance, denying all access to patient data hinders its potential. For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised treatments~\cite{tucker2020}; patient data can be used to train the next generation of healthcare practitioners and researchers. Synthetic data that resemble the characteristics of such patient data can also be shared with the supply chain that provide services to the NHS~\cite{harris2022}, which can lead to better support systems and potentially increased competition.  This can in turn result in increased efficiency and decreased costs.
 
 In order to both protect user privacy \emph{and} control access, current techniques employ mechanisms including data agreements, de-identification or anonymisation, aggregation over the original data, and provision of trusted research environments (TRE) for access by third parties. While these techniques provide an extra layer of protection, they are not immune to vulnerabilities~\cite{near2021}. For example, de-identified data releases are still susceptible to linkage attacks. Aggregation requires releasing only aggregate population metrics, such as counts or averages, but outliers remain vulnerable to identification~\cite{tucker2020}. Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release \emph{synthetic} patient data. 
 
@@ -443,7 +443,7 @@ The proliferation of research on synthetic data over the past five years undersc
 
 \vspace{1em}
 
-Our development of a Synthetic Data Generator (SDG) for sharing sensitive hospital information has highlighted several key challenges:
+Our development of a Synthetic Data Generator (SDG) for sharing sensitive hospital information has highlighted these key challenges:
 
 \paragraph{There is a lack of generators developed for relational data:}
 The development of synthetic generators commonly explore image, text data, or tabular data. Our experience is that synthetic data generators overlook the relational data format, possibly because of the foreign key constraints satisfaction criteria. This is a problem because hospital datasets are often stored in relational formats. 
@@ -465,11 +465,11 @@ Despite its design to address these challenges, our \textsc{SqlSynthGen} tool ha
 
 \section{Conclusion}
 
-The number of research papers on synthetic data has surged significantly, indicating its growing importance in addressing data scarcity and sensitivity issues in machine learning. There is a notable gap in the development of synthetic data generators specifically for relational data. Most exciting developments on generators focus on time-series, graph, audio, imaging or tabular data structures, often neglecting the complexities associated with relational databases, such as foreign key constraints. This limitation is significant because many practical applications, particularly in healthcare, rely heavily on relational data formats. 
+The number of research papers on synthetic data has surged significantly, indicating its growing importance in addressing data scarcity and sensitivity issues in machine learning. There is a notable gap in the development of synthetic data generators specifically for relational data structures. Most exciting developments on generators focus on time-series, graph, audio, imaging or tabular data structures, often neglecting the complexities associated with relational databases, such as foreign key constraints. This limitation is significant because many practical applications, particularly in healthcare, rely heavily on relational data formats. 
 
-Aside from the oversight in generators focused on relational data, the lack of explainability in privacy-preserving mechanisms is a critical challenge. For synthetic data to be trusted and widely adopted, especially in sensitive domains like healthcare, stakeholders need to understand how privacy is preserved. The opacity of deep learning models and GANs currently used in generating synthetic data makes it difficult to provide this assurance, which can hinder stakeholder discussions and acceptance.
+Aside from the oversight in provision for relational data, the lack of explainability in privacy-preserving mechanisms is a critical challenge. For synthetic data to be trusted and widely adopted, especially in sensitive domains like healthcare, stakeholders need to understand how privacy is preserved. The opacity of deep learning models and GANs currently used in generating synthetic data makes it difficult to provide this assurance, which can hinder stakeholder discussions and acceptance.
 
-The direction for future work on the application of synthetic data generation in sensitive information context is clear:
+The direction for future work on the application of synthetic data generation in sensitive data context is clear:
 
 \begin{enumerate}
     \item \textbf{Development of Relational Data Generators: } There is a clear need for synthetic data generators that can handle relational data formats effectively, addressing issues like foreign key constraints.
