@@ -9,23 +9,23 @@
 \begin{document}
 \title{Transparent Decisions: Selective Information Disclosure To Generate Synthetic Data}
 \author{
-Carlos Gavidia-Calderon$^1$, Steve Harris$^2$, Markus Hauru$^1$, Florimond Houssiau$^1$, \\ Carsten Maple$^1$^,$^3$, Iain Stenson$^1$ and May Yong$^1$ \\~\\
+Carlos Gavidia-Calderon$^1$, Steve Harris$^2$,$^3$, Markus Hauru$^1$, Florimond Houssiau$^1$, \\ Carsten Maple$^1$^,$^4$, Iain Stenson$^1$ and May Yong$^1$ \\~\\
 $^1$The Alan Turing Institute \\
-$^2$University College London
-$^3$University of Warwick
+$^2$University College London \\ 
+$^3$NIHR University College London Hospitals BRC \\
+$^4$University of Warwick  \\
 }
 \date{\today} % Or specify a specific date
 \maketitle
 \begin{abstract}
-The UK government and the public are keen to see the National Health Service (NHS) leverage data and artificial intelligence for the public good \cite{gov2022datasaves}\cite{Jones2022}. However, there is a major challenge in balancing accessibility of healthcare data in order to boost research, against the requirement to protecting patient privacy. Synthetic data generation is an emerging technique that enables access to data that, in some way, shares the characteristics of the original data. In this paper we introduce SqlSynthGen (SSG), a method for generating synthetic relational datasets. SSG offers a human-readable, risk-guided approach to refining data fidelity while managing disclosure risk. This paper presents SSG, specifically focusing on its application for generating synthetic hospital patient data.
+The UK government and the public wish to see the National Health Service (NHS) use data and Artificial Intelligence for public good \cite{gov2022datasaves}\cite{Jones2022}. However, there is a major challenge in making health data available for research whilst respecting patient privacy. Synthetic data generation is an emerging technique that enables access to data that, in some way, shares the characteristics of the original data. In this paper we introduce SqlSynthGen (SSG), a method for generating synthetic relational datasets. SSG offers a human-readable, risk-guided approach to refining data fidelity while managing disclosure risk. This paper presents SSG, specifically focusing on its application for generating synthetic data from NHS hospitals.
 \end{abstract}
 
 \section{Introduction}
 
-Hospitals currently manage and produce large quantities of
-patient data stored in relational databases. While hospital staff access this data for their clinical duties, other professional communities--- scientists, software engineers and educators --- necessarily follow lengthy processes to be granted access. Controls are in place to ensure patient data ---which is both sensitive and valuable~\cite{schomerus2022}--- is accessed for only legitimate reasons. Current practices involve drawing up employee contracts, implementing de-identification or anonymisation mechanisms to remove personal information, and accessing data only via trusted environments~\cite{harris2022}.
+Hospitals electronic health record systems are typically built using relational databases containing millions of records. While hospital staff access this data for their clinical duties, other professional communities--- scientists, software engineers and educators --- rightly must follow lengthy processes to be granted access. Controls are in place to ensure patient data ---which is both sensitive and valuable~\cite{schomerus2022}--- is accessed for only legitimate reasons. Current practices involve preparing employee contracts, implementing de-identification or anonymisation mechanisms to remove personal information, and accessing data only via Trusted Research Environments~\cite{harris2022}.
 
-While protecting patient privacy is of utmost importance, denying all access to patient data hinders its potential. For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised treatments~\cite{tucker2020}. Patient data can be used to train the next generation of healthcare practitioners and researchers. Synthetic data that resemble the characteristics of such patient data can also be shared with the supply chain that provide services to the NHS~\cite{harris2022}, which can lead to better support systems and potentially increased competition.  This can in turn result in increased efficiency and decreased costs.
+While protecting patient privacy is of utmost importance, these processes impede collaboration and engagement, and introduce delays to researchers already working to arduous grant deadlines. For instance, researchers can use data to improve diagnostic accuracy, refine our understanding of diseases, or develop personalised treatments~\cite{tucker2020}. Patient data can be used to train the next generation of healthcare practitioners and researchers. Synthetic data is an accelerator: it can provide a simulcrum with the characteristics of patient data that can be shared onwardly. This can be used to support education and training, to quality control applications and code, and to test reproducible analytical pipelines in the open. This will accelerate academic progress for patient benefit.
 
 In order to both protect user privacy \emph{and} control access, current techniques employ mechanisms including data agreements, de-identification or anonymisation, aggregation over the original data, and provision of trusted research environments (TRE) for access by third parties. While these techniques provide an extra layer of protection, they are not immune to vulnerabilities~\cite{near2021}. For example, de-identified data releases are still susceptible to linkage attacks. Aggregation requires releasing only aggregate population metrics, such as counts or averages, but outliers remain vulnerable to identification~\cite{tucker2020}. Instead of releasing \emph{real} patient data ---either partial or aggregate--- an option is to release \emph{synthetic} patient data. 
 
@@ -181,7 +181,7 @@ Providing this explanation in a single, human-readable source ensures consistenc
 
 The concept of synthetic data is complex, people may not understand how data that does not represent real individuals still needs privacy considerations. It is furthermore difficult to understand how the application of differential privacy to aggregates and statistics can provide additional protection. 
 
-Differential privacy (DP) \cite{DworkR14} is the gold standard that protects individuals within a dataset while still allowing for the useful analysis of the aggregate data. Its internal mechanics  of noise addition for the purpose of privacy preservation can leave users without a clear understanding of its outputs and how to interpret them correctly. 
+Differential privacy (DP) \cite{DworkR14} is the gold standard that protects individuals within a dataset while still allowing for the useful analysis of the aggregate data. Its internal mechanics  of noise addition for the purpose of privacy preservation can leave users without a clear understanding of its outputs and how to interpret them correctly\cite{Dankar2013}.
 
 The application of differential privacy to synthetic data compounds the explanations' complexities. There is a struggle to understand how DP offers probabilistic but not absolute guarantees. Explaining this to custodians of highly sensitive data is difficult because privacy is expected but not always technically feasible. 
 
@@ -450,6 +450,10 @@ Explainability in synthetic data generators is a crucial issue for custodians of
 
 \vspace{1em}
 
+We specifically addressed this explainability challenge in a series of workshops with patient and public involvement, and using SSG as an exemplar. There were two key messages from our stakeholders. Firstly, they were reassured to understand the distinction in the source of the data. Anonymised data is processed from the original data whereas synthetic data is generated \textit{de novo}. Secondly, they valued using a language that talked about sharing information (with synthetic data) in contrast to sharing data (with anonymisation). There was recognition that information is \textit{already} shared and tools like SSG are trustworthy because they are transparent about what information is used to generate the synthetic data.
+
+\vspace{1em}
+
 Despite its design to address these challenges, our \textsc{SqlSynthGen} tool has several limitations:
 
 \paragraph{Lack of Autonomous Model Discovery:} Unlike GANs-based \cite{10.3390/math10152733} or Bayesian-based \cite{Cai2023} generators, SSG cannot autonomously discover underlying models or relationships. Users must predetermine the models, limiting the tool's adaptability and the transferability of algorithms trained on its outputs to real-world data.
@@ -483,7 +487,11 @@ By addressing these challenges and focusing on these future directions, the prac
 
 \section{Acknowledgements}
 
-The authors thank Olajumoke Olatunji for her help in improving the docummentation of SSG, and helping us present it.
+\begin{enumerate}
+    \item This project was funded by Ecosystem Leadership Award under the EPSRC OobfJ22\textbackslash100020.
+    \item This project was supported by the National Institute for Health and Care Research (NIHR)University College London Hospitals (UCLH) Biomedical Research Centre (BRC).
+    \item  The authors thank Olajumoke Olatunji for her help in improving the documentation of SSG and helping us present it.
+\end{enumerate}
 
 \bibliographystyle{plain}
 \bibliography{references}
